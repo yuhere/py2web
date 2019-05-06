@@ -13,7 +13,7 @@
     jq.$(document).ready(function(){
       jq.ajax({url:"files/index.json"}).done(function(upds){
         var ul$dom = jq.$("#lst");
-        for (var i = 0；;i<upds.length;i++) {
+        for (var i = 0;i<upds.length;i++) {
           var lnk = upds[i].link;
           var name = (function(lnk){
             var pos1 = lnk.lastIndexOf("/");
