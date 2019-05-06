@@ -1,6 +1,6 @@
 [
   
-  { "link" : "files/Py2TT-1.0.3-setup.zip", desc: "py2tt工具"}, 
-  { "link" : "files/Py2TT-1.0.3-setup-pwd123456.zip", desc: "py2tt加密压缩, 密码123456"}, 
-  { "link" : "py2oed-3.7.0-setup.zip", desc: "py2oed数据编辑工具"}
+  { "link" : "files/Py2TT-1.0.3-setup.zip", "desc": "py2tt工具"}, 
+  { "link" : "files/Py2TT-1.0.3-setup-pwd123456.zip", "desc": "py2tt加密压缩, 密码123456"}, 
+  { "link" : "py2oed-3.7.0-setup.zip", "desc": "py2oed数据编辑工具"}
 ]
