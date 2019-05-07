@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+    <title>py2regexp</title>
+    <link rel="shortcut icon" href="favicon.ico" />
+    <meta name="description" content="Regular expression visualizer using railroad diagrams" />
+    <meta name="viewport" content="width=device-width" />
+    <link rel="stylesheet" href="fonts.googleapis.com.css" />
+    <link rel="stylesheet" href="normalize.min.css" />
+    <link rel="stylesheet" href="main.css" />
+</head>
+<body>
+    <header>
+        <h1>py2regexp</h1>
+        <span>Parse your regexp offine...</span>
+    </header>
+
+    <section id="content">
+        <div class="container">
+            <span>
+                <input id="regexp_input" type="text" value="(\.)(s(?:ub(?:stringData|mit)|plitText|e(?:t(?:NamedItem|Attribute(?:Node)?)|lect))|has(?:ChildNodes|Feature)|namedItem|c(?:l(?:ick|o(?:se|neNode))|reate(?:C(?:omment|DATASection|aption)|T(?:Head|extNode|Foot)|DocumentFragment|ProcessingInstruction|E(?:ntityReference|lement)|Attribute))|tabIndex|i(?:nsert(?:Row|Before|Cell|Data)|tem)|open|delete(?:Row|C(?:ell|aption)|T(?:Head|Foot)|Data)|focus|write(?:ln)?|a(?:dd|ppend(?:Child|Data))|re(?:set|place(?:Child|Data)|move(?:NamedItem|Child|Attribute(?:Node)?)?)|get(?:NamedItem|Element(?:sBy(?:Name|TagName)|ById)|Attribute(?:Node)?)|blur)\b(?=\()" 
+                        autocomplete="off"
+                        autofocus="autofocus" placeholder="Enter JavaScript-style regular expression to display" />
+            </span>
+            <button id="regexp_btn">Display</button>
+        </div>
+
+        <div class="results">
+            <div id="loading">
+                <img src="loader.gif" alt="Loading" />
+            </div>
+            <div id="error"></div>
+            <div id="paper-container"></div>
+        </div>
+    </section>
+
+    <footer>
+        <ul>
+            <li>Created by <a href="mailto:yuhere@gmail.com">Peng Yu</a></li>
+            <li class="last">Idea from <a target="_blank" href="http://www.regexper.com/">Regexper</a></li>
+        </ul>
+        
+    </footer>
+
+   <script type="text/javascript" data-main="index" src="require.min.js"></script>
+</body>
+</html>
