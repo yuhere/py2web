@@ -290,7 +290,7 @@ var words = ghtml.words;
 var qid = dat.qid;
 //
 var main_html = "<div id=\"header\" class=\"ctl\"></div>" + 
-  "<div class=\"block pbk question\"><div id=\"qheader\" class=\"block\"></div><div>" + ghtml.question + "</div></div>" +
+  "<div class=\"block question\"><div id=\"qheader\" class=\"block\"></div><div>" + ghtml.question + "</div></div>" +
   "<div class=\"block pbk answer\"><div>" + ghtml.answer + "</div></div>";
 document.getElementById("main").innerHTML = main_html;
 // 
@@ -332,7 +332,7 @@ function switchMode(m) {
       remainingTimer && clearInterval(remainingTimer); remainingTimer = undefined;
       checkInputs();
       btn_submit.remove();
-      remainingEle.innerHTML = "📆" + fmtd(new Date(startAt)) + " ~ " + fmtd(new Date(), 'hh:mm:ss');
+      remainingEle.innerHTML = "📆" + fmtd(new Date(startAt), 'yyyy-MM-dd hh:mm') + " ~ " + fmtd(new Date(), 'hh:mm');
       MODE = "finish";
       setTimeout(function(){
         window.print();
