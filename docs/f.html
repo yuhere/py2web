@@ -163,7 +163,8 @@ span.w {
 var dat = {"marked":"0123456789012345678901234567890123456789\n<w>Transcript</w>:\nJack: <w>Hi</w> <w>there</w>, I’m Jack. \n\nSarah: <w>And</w> I'm Sarah. Welcome to Everyday English! Today we're <w>talking</w> about making friends! \n"};
 
 
-function fmtd(_date, _format = 'yyyy-MM-dd hh:mm:ss') {
+function fmtd(_date, _format) {
+  _format = _format === undefined ? 'yyyy-MM-dd hh:mm:ss' : _format;
   var o = {
     "M+": _date.getMonth() + 1, //month
     "d+": _date.getDate(), //day
@@ -200,7 +201,8 @@ function wrap_tag(t, cls, w) {
   return "<" + t + " class=\"" + cls + "\">" + w + "</" + t + ">";
 }
 
-function cwrap(segment, cls="c") {
+function cwrap(segment, cls) {
+  cls = cls === undefined ? "c" : cls;
   var _html = [];
   for (var i=0;i<segment.length;i++) {
     _html.push(wrap_tag("span", cls, escapeHtml(segment.charAt(i))));
@@ -293,7 +295,9 @@ var main_html = "<div id=\"header\" class=\"ctl\"></div>" +
 document.getElementById("main").innerHTML = main_html;
 // 
 var MODE = 'normal';
-function switchMode(m = 'normal') {
+function switchMode(m) {
+  m = m === undefined ? "normal" : m;
+
   // ## 1. 根据 MODE 调整按钮
   (function(){
     var header_div = document.getElementById("header"),
@@ -330,7 +334,9 @@ function switchMode(m = 'normal') {
       btn_submit.remove();
       remainingEle.innerHTML = "📆" + fmtd(new Date(startAt)) + " ~ " + fmtd(new Date(), 'hh:mm:ss');
       MODE = "finish";
-      window.print();
+      setTimeout(function(){
+        window.print();
+      }, 100);
     }
   });
   btn_cancel && btn_cancel.addEventListener("click", function(e) {
@@ -563,7 +569,9 @@ function focus2(target_idc) {
   return true;
 }
 //
-function getEleIdc(direction = 0) {
+function getEleIdc(direction) {
+  direction = direction === undefined ? 0 : direction;
+
   var m = /w([0-9])+c([0-9]+)/.exec(current_idc);
   var w = parseInt(m[1]), c = parseInt(m[2]) + (direction === 0 ? 0 : (direction > 0 ? 1 : -1));
   var next;
