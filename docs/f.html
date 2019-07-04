@@ -1,0 +1,722 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Spelling</title>
+  <meta name="viewport" content="initial-scale=1.0"/>
+<style>
+
+body {
+    font-family: Monaco, Menlo, "Ubuntu Mono", Consolas, source-code-pro, monospace;
+    font-size: 20px;
+}
+
+
+div.pbk {
+    page-break-before: always;
+}
+
+div.block {
+    border: solid black 1px;
+    width: 685px;
+    padding: 2px;
+    /*height: 800px;*/
+}
+
+div#qheader {
+    border: 0px;
+    padding: 0px;
+    margin: 0px;
+}
+
+div.status {
+    border: solid black 1px;
+    padding: 0px;
+    margin: 0px;
+    height: 30px;
+    padding: 1px;
+}
+
+span#remaining {
+    /*border: solid black 1px;*/
+    float: right;
+}
+span#ir_count {
+    /*border: solid black 1px;*/
+    float: left;
+}
+
+
+
+p, input.i, span.c {
+    font-family: Monaco, Menlo, "Ubuntu Mono", Consolas, source-code-pro, monospace;
+    font-size: 20px;
+    white-space: pre-wrap;
+    padding: 0px;
+    letter-spacing: 7px;
+    line-height: 40px;
+}
+
+span.c {   /* 单个不可输入字符 */
+    border: solid white 1px;
+    width: 13px;
+    margin: 1px; 
+    text-rendering: auto;
+    color: initial;
+    letter-spacing: normal;
+    word-spacing: normal;
+    text-transform: none;
+    text-indent: 0px;
+    text-shadow: none;
+    display: inline-block;
+    text-align: start;
+    background-color: white;
+    cursor: text;
+}
+
+span.s {   /* 单个可输入字符，边框 */
+    border: solid gray 1px;
+}
+
+span.f {    /* 获得焦点时，边框变色 */
+    border: solid blue 1px;
+}
+
+span.x {    /* 错误答案时，用红色显示 */
+    color: red;
+    background-color:yellow; 
+}
+
+input.i { /* 浮动输入框 */
+    border: solid gray 0px;
+    width: 13px;
+    /*margin: 1px; */
+    text-rendering: auto;
+    color: initial;
+    letter-spacing: normal;
+    word-spacing: normal;
+    text-transform: none;
+    text-indent: 0px;
+    text-shadow: none;
+    display: inline-block;
+    text-align: start;
+    background-color: white;
+    cursor: text;
+    line-height: 38px;
+    outline:none;
+
+}
+
+input.i:focus { 
+    /* background-color:yellow; */
+}
+
+
+input.l, span.l {
+    text-transform: lowercase;
+}
+
+input.u, span.u {
+    text-transform: uppercase;
+}
+
+span.w {
+    text-rendering: auto;
+    color: initial;
+    letter-spacing: normal;
+    word-spacing: normal;
+    text-transform: none;
+    text-indent: 0px;
+    text-shadow: none;
+    display: inline-block; /* inline 会让它不按词换行 */
+    text-align: start;
+    background-color: white;
+    cursor: text;
+}
+
+@media screen {
+
+    div.answer {
+        display: none;
+    }
+
+}
+
+@media print {
+    
+    div#header {
+        display: none;
+    }
+    
+    div.answer {
+        display: block;
+    }
+
+}
+
+</style>
+</head>
+<body>
+<div id="main"></div>
+<script>
+<!--
+var dat = {"marked":"0123456789012345678901234567890123456789\n<w>Transcript</w>:\nJack: <w>Hi</w> <w>there</w>, I’m Jack. \n\nSarah: <w>And</w> I'm Sarah. Welcome to Everyday English! Today we're <w>talking</w> about making friends! \n"};
+
+
+function fmtd(_date, _format = 'yyyy-MM-dd hh:mm:ss') {
+  var o = {
+    "M+": _date.getMonth() + 1, //month
+    "d+": _date.getDate(), //day
+    "h+": _date.getHours(), //hour
+    "m+": _date.getMinutes(), //minute
+    "s+": _date.getSeconds(), //second
+    "q+": Math.floor((_date.getMonth() + 3) / 3), //quarter
+    "S": _date.getMilliseconds() //millisecond
+  };
+  if (/(y+)/.test(_format)) {
+    _format = _format.replace(RegExp.$1, (_date.getFullYear() + "").substr(4 - RegExp.$1.length));
+  }
+  for (var k in o) {
+    if (new RegExp("(" + k + ")").test(_format)) {
+      _format = _format.replace(RegExp.$1, RegExp.$1.length == 1
+        ? o[k]
+        : ("00" + o[k]).substr(("" + o[k]).length)
+      );
+    }
+  }
+  return _format;
+}
+
+
+function escapeHtml(unsafe) {
+    return unsafe
+         .replace(/&/g, "&amp;")
+         .replace(/</g, "&lt;")
+         .replace(/>/g, "&gt;")
+         .replace(/"/g, "&quot;");
+}
+
+function wrap_tag(t, cls, w) {
+  return "<" + t + " class=\"" + cls + "\">" + w + "</" + t + ">";
+}
+
+function cwrap(segment, cls="c") {
+  var _html = [];
+  for (var i=0;i<segment.length;i++) {
+    _html.push(wrap_tag("span", cls, escapeHtml(segment.charAt(i))));
+  }
+  return _html.join("");
+}
+
+function wwrap(segment) {
+  var _html = [];
+  var regex = /([a-z0-9]+)/ig;
+  var m, lastIndex = 0;
+  while ((m = regex.exec(segment)) !== null) {
+      // This is necessary to avoid infinite loops with zero-width matches
+      if (m.index === regex.lastIndex) {
+          regex.lastIndex++;
+      }
+      var w = m[1], pre = segment.substring(lastIndex, m.index);
+      lastIndex = m.index + m[0].length;
+      _html.push(cwrap(pre));
+      _html.push(wrap_tag("span", "w", cwrap(w)));
+  }
+  _html.push(cwrap(segment.substring(lastIndex)));
+  //
+  return _html.join("");
+}
+//
+function mwwrap(w, widx) {
+  var _span = [], _input = [];
+  for (var i=0;i<w.length;i++) {
+    var idc = " w" + widx + "c" + i;
+    var charCode = w.charCodeAt(i);
+    _span.push(cwrap(w.charAt(i), "c s"));
+    _input.push(cwrap(" ", "c s" + ((charCode >= 97 && charCode <= 122) ? " l" : ((charCode >= 65 && charCode <= 90) ? " u" : "")) + idc));
+  }
+  return {
+    "span": wrap_tag("span", "w w" + widx, _span.join("")),
+    "input": wrap_tag("span", "w w" + widx, _input.join(""))
+  }
+}
+//
+function innHTML(dat) {
+    var marked = dat.marked;
+    var dic = dat.dict;
+    // @@@@@@@@@@@@@@@ 分段落
+    var lines = marked.split(/\r?\n/g);
+    var whtml, mwhtml, question_html = [], words = [], answer_html = [];
+    for (var i=0;i<lines.length;i++){
+      var line = lines[i];
+      question_html.push("<p>");
+      answer_html.push("<p>");
+      // @@@@@@@@@@@ 分析 <w/> 标记
+      var regex = /\<w\>(.*?)\<\/w\>/ig;
+      var m, lastIndex = 0;
+      while ((m = regex.exec(line)) !== null) {
+          // This is necessary to avoid infinite loops with zero-width matches
+          if (m.index === regex.lastIndex) {
+              regex.lastIndex++;
+          }
+          var w = m[1], pre = line.substring(lastIndex, m.index);
+          whtml = wwrap(pre);
+          mwhtml = mwwrap(w, words.length);
+          question_html.push(whtml + mwhtml.input);
+          answer_html.push(whtml + mwhtml.span);
+          words.push(w.split(""));
+          // ============
+          lastIndex = m.index + m[0].length;
+      }
+      whtml = wwrap(line.substring(lastIndex));
+      question_html.push(whtml);
+      answer_html.push(whtml);
+      // @@@@@@@@@@@ 
+      question_html.push("</p>\n")
+      answer_html.push("</p>\n")
+    }
+    // console.log("\n" + question_html.join(""));
+    return {
+      question: question_html.join(""),
+      answer: answer_html.join(""),
+      words: words
+    }
+}
+//
+var ghtml = innHTML(dat);
+var words = ghtml.words;
+var qid = dat.qid;
+//
+var main_html = "<div id=\"header\" class=\"ctl\"></div>" + 
+  "<div class=\"block pbk question\"><div id=\"qheader\" class=\"block\"></div><div>" + ghtml.question + "</div></div>" +
+  "<div class=\"block pbk answer\"><div>" + ghtml.answer + "</div></div>";
+document.getElementById("main").innerHTML = main_html;
+// 
+var MODE = 'normal';
+function switchMode(m = 'normal') {
+  // ## 1. 根据 MODE 调整按钮
+  (function(){
+    var header_div = document.getElementById("header"),
+      qheader_div = document.getElementById("qheader");
+    if (m === "normal") {
+      header_div.innerHTML = "<div><button id=\"btn_print\">🖨️</button><button id=\"btn_exam\">🎓</button></div>";
+      qheader_div.innerHTML = "";
+      qheader_div.style.visibility = "hidden";
+    } else if (m === "exam") {
+      header_div.innerHTML = "<div><button id=\"btn_submit\">✅</button><button id=\"btn_cancel\">❎</button></div>";
+      qheader_div.innerHTML = "<div class=\"status\"><span id=\"ir_count\"></span><span id=\"remaining\">⌛00:00:00</span></div>";
+      qheader_div.style.visibility = "visible";
+    }
+  })();
+  //
+  var btn_print = document.getElementById("btn_print"),
+      btn_exam = document.getElementById("btn_exam"),
+      btn_submit = document.getElementById("btn_submit"),
+      btn_cancel = document.getElementById("btn_cancel"),
+      remainingEle = document.getElementById("remaining"),
+      remainingTimer, startAt = (new Date()).getTime();
+  btn_print && btn_print.addEventListener("click", function(e){
+    window.print();
+  });
+  btn_exam && btn_exam.addEventListener("click", function(e){
+    switchMode("exam");
+  });
+  //
+  btn_submit && btn_submit.addEventListener("click", function(e){
+    var msg = countInputs() ? "是否要提交？" : "看样子还没有答完，确认要提交吗？";
+    if (confirm(msg)) {   // confirm
+      remainingTimer && clearInterval(remainingTimer); remainingTimer = undefined;
+      checkInputs();
+      btn_submit.remove();
+      remainingEle.innerHTML = "📆" + fmtd(new Date(startAt)) + " ~ " + fmtd(new Date(), 'hh:mm:ss');
+      MODE = "finish";
+      window.print();
+    }
+  });
+  btn_cancel && btn_cancel.addEventListener("click", function(e) {
+    if (MODE === "finish") {
+      switchMode("normal");
+    } else {
+      if (confirm("是否要取消？")) {   // confirm
+        remainingTimer && clearInterval(remainingTimer); remainingTimer = undefined;
+        switchMode("normal");
+      }
+    }
+  });
+  // ## 2. 重置可能已经输入内容
+  clearInputs();
+  //
+  if (m === "exam") {
+    remainingTimer = setInterval(function(){
+      // console.log("remainingTimer...", remainingTimer, remainingEle);
+      var diff = Math.floor(((new Date()).getTime() - startAt) / 1000); 
+      var diff_str = [];
+      diff_str.push(("" + Math.floor(diff / 3600)).padStart(2, "0"));  // hour
+      diff = diff % 3600;
+      diff_str.push(("" + Math.floor(diff / 60)).padStart(2, "0"));    // minute
+      diff = diff % 60;
+      diff_str.push(("" + diff).padStart(2, "0"));    // minute
+      remainingEle.innerHTML = "⏱" + diff_str.join(":");
+    }, 1000);
+    focus2("w0c0");
+  }
+  //
+  MODE = m;
+}
+//
+var elements = words.map(function(word, i){
+  return word.map(function(chr, j){
+    var idc = "w" + i + "c" + j;
+    var ele = document.getElementsByClassName(idc)[0];
+    // @@@@@@@@@@@@@@@@@@@@
+    ele.addEventListener("mousedown", function(e){
+      if (MODE === "exam") {
+        focus2(idc);
+        e.preventDefault();
+        e.stopPropagation();
+      }
+    });
+    // @@@@@@@@@@@@@@@@@@@@
+    return ele;
+  })
+});
+// 
+var inpEle = (function() {
+  var ele = document.createElement("input")
+  ele.classList.add("i");
+  ele.setAttribute("maxlength", "1");
+  ele.value = " ";
+  //
+  ele.addEventListener("input", function(e){  // 检查输入的字符是否正确
+    var val = e.target.value;
+    if (!valid_keydown || ele.value === "") {
+      ele.value = " ";
+      ele.selectionStart = 0;
+      ele.selectionEnd = 1;
+    }
+    countInputs();
+    // console.log("input....", valid_keydown);
+  });
+  
+  var valid_keydown = false;
+  ele.addEventListener("keydown", function(e){
+    console.log("keydown....", e);
+    // var val = e.target.value;
+    valid_keydown = true;
+    if (e.keyCode === 8) {   // backspace
+      ele.value = " ";
+      prevE();
+      countInputs();
+    } else if (e.keyCode === 37 || e.keyCode === 38) {   // left, up
+      prevE();
+    } else if (e.keyCode === 39 || e.keyCode === 40) {   // right or down
+      nextE();
+    } else if (e.keyCode === 46) {   // delete
+      ele.value = " ";
+      ele.selectionStart = 0;
+      ele.selectionEnd = 1;
+      countInputs();
+    } else if (e.keyCode === 32) {   // space
+      ele.value = " ";
+      nextE();
+      countInputs();
+    } else if (e.keyCode === 9 || e.keyCode === 13) {    // tab, enter
+      if (e.ctrlKey) {
+        var btn_submit = document.getElementById("btn_submit");
+        btn_submit && (btn_submit.focus() + btn_submit.click());
+      } else {
+        if (e.shiftKey) {
+          prevE();
+        } else {
+          nextE();
+        }
+      }
+    } else if ( (!e.ctrlKey && !e.altKey && !e.metaKey ) && ((e.keyCode>=65 && e.keyCode<=90) || (e.keyCode>=97 && e.keyCode<=122))) {
+      // only a-z accepted.
+      ele.value = String.fromCharCode(e.keyCode);
+      nextE();
+      countInputs();
+    } else if ([186].indexOf(e.keyCode) !== -1) {    // Semicolon:186(;)
+      // TODO play audio
+    } else if (e.keyCode === 188) {   // comma:188(,)
+      input_correct('char');   // 修复这个位置字符
+      countInputs();
+    } else if (e.keyCode === 190) {   // period(.):190
+      input_correct('word');   // 修复这个位置单词
+      countInputs();
+    } else if (e.keyCode === 191) {   // slash(/):191
+      input_correct('part');   // 修复这个位置单词元音字符
+      countInputs();
+    } else {
+      valid_keydown = false;
+    }
+    // 
+    e.preventDefault();
+    e.stopPropagation();
+  });
+  ele.addEventListener("focus", function(e){
+    ele.selectionStart = 0;
+    ele.selectionEnd = 1;
+  });
+  ele.addEventListener("blur", function(e){ 
+    focus2();
+  });
+  return ele;
+})();
+//
+function word_enter(widx) {
+  console.log("word_enter...", words[widx]);
+}
+//
+function word_levae(widx) {
+  console.log("word_levae...", words[widx]);
+}
+//
+function play_audio() {
+  var m = /w([0-9])+c([0-9]+)/.exec(current_idc),
+      w = parseInt(m[1]), c = parseInt(m[2]),
+      word = words[w].join("").toLowerCase();
+  // find out from dict 
+}
+//
+var current_idc;
+function focus2(target_idc) {
+  if (target_idc === undefined) {
+    if (current_idc !== undefined) {
+      // blur
+      var m0 = /w([0-9])+c([0-9]+)/.exec(current_idc),
+          w0 = parseInt(m0[1]), c0 = parseInt(m0[2]),
+          currentEle = elements[w0][c0],
+          currentTextEle = document.createTextNode(inpEle.value || " ");
+      // console.log("set current_idc to undefined ....", current_idc, target_idc, currentTextEle);
+      currentEle.replaceChild(currentTextEle, inpEle);
+      currentEle.classList.contains("f") && currentEle.classList.remove("f");
+      var onchanging = inpEle.getAttribute("onchanging");
+      if (onchanging === null) {
+        word_levae(w0);
+      } else {
+        inpEle.removeAttribute("onchanging");
+      }
+      current_idc = undefined;
+    }
+    return true;
+  }
+  //
+  if (current_idc === undefined) {     // 当前没有焦点
+    var m1 = /w([0-9])+c([0-9]+)/.exec(target_idc),
+        w1 = parseInt(m1[1]), c1 = parseInt(m1[2]),
+        targetEle = elements[w1][c1], 
+        targetTextEle = targetEle.firstChild;
+    // console.log("no current_idc ....", current_idc, target_idc, targetTextEle, targetTextEle);
+    inpEle.value = targetTextEle.nodeValue;
+    inpEle.classList.remove("l");inpEle.classList.remove("u");
+    // 
+    targetEle.classList.contains("l") && inpEle.classList.add("l");
+    targetEle.classList.contains("u") && inpEle.classList.add("u");
+    !targetEle.classList.contains("f") && targetEle.classList.add("f");
+    targetEle.replaceChild(inpEle, targetTextEle);
+    //
+    inpEle.focus();
+    current_idc = target_idc;
+    word_enter(w1);
+    return true;
+  }
+  // 
+  if (current_idc === target_idc) {
+    // console.log("current_idc === target_idc ....", current_idc, target_idc);
+    inpEle.selectionStart = 0;
+    inpEle.selectionEnd = 1;
+    // inpEle.focus();
+    return false;
+  }
+  // 
+  var m0 = /w([0-9])+c([0-9]+)/.exec(current_idc),
+      w0 = parseInt(m0[1]), c0 = parseInt(m0[2]),
+      currentEle = elements[w0][c0],
+      currentTextEle = document.createTextNode(inpEle.value || " ");;
+  var m1 = /w([0-9])+c([0-9]+)/.exec(target_idc),
+      w1 = parseInt(m1[1]), c1 = parseInt(m1[2]),
+      targetEle = elements[w1][c1], 
+      targetTextEle = targetEle.firstChild;
+
+  // console.log("blur and focus...", current_idc, target_idc);
+  // blur
+  inpEle.setAttribute("onchanging", "true")
+  inpEle.blur();
+  if (w0 !== w1) {
+    word_levae(w0);
+  }
+  // console.log("blur and focus...", currentEle, targetEle);
+  // focus
+  inpEle.value = targetTextEle.nodeValue;
+  inpEle.classList.remove("l");inpEle.classList.remove("u");
+  targetEle.classList.contains("l") && inpEle.classList.add("l");
+  targetEle.classList.contains("u") && inpEle.classList.add("u");
+  !targetEle.classList.contains("f") && targetEle.classList.add("f");
+  targetEle.replaceChild(inpEle, targetTextEle);
+  // console.log("blur and focus...", currentEle, targetEle);
+  inpEle.focus();
+  current_idc = target_idc;
+  if (w0 !== w1) {
+    word_enter(w1);
+  }
+  return true;
+}
+//
+function getEleIdc(direction = 0) {
+  var m = /w([0-9])+c([0-9]+)/.exec(current_idc);
+  var w = parseInt(m[1]), c = parseInt(m[2]) + (direction === 0 ? 0 : (direction > 0 ? 1 : -1));
+  var next;
+  //
+  if (direction === 0) {
+    return current_idc;
+  } else if (direction > 0) {
+    // next of current_idc 
+    for (var i=w;i>=0&&i<elements.length && next === undefined;i++) {
+      var word_elements = elements[i];
+      var j = (i === w ? c : 0);
+      for (;j>=0&&j<word_elements.length && next === undefined;j++) {
+        next = "w" + i + "c" + j;
+      }
+    }
+    if (next === undefined) {
+      next = "w0c0";
+    }
+    // 
+    return next;
+  } else if (direction < 0) {
+    // prev of current_idc
+    for (var i=w;i>=0&&i<elements.length && next === undefined;i--) {
+      var word_elements = elements[i];
+      var j = (i === w ? c : word_elements.length-1);
+      for (;j>=0&&j<word_elements.length && next === undefined;j--) {
+        next = "w" + i + "c" + j;
+      }
+    }
+    if (next === undefined) {
+      next = "w" + (elements.length - 1) + "c" + (elements[elements.length - 1].length - 1);
+    }
+    return next;
+  }
+}
+//
+function nextE() {
+  focus2(getEleIdc(1));
+}
+//
+function prevE() {
+  focus2(getEleIdc(-1));
+}
+//
+function nextC(direction) { // 下一个字符
+
+}
+function nextW(direction) { // 下一个单词
+
+}
+//
+function input_correct(key) {
+  if (current_idc !== undefined) {
+    var m = /w([0-9])+c([0-9]+)/.exec(current_idc),
+        w = parseInt(m[1]), 
+        c = parseInt(m[2]);
+    if (key === 'char') {       // 补全字符
+      inpEle.value = words[w][c];
+      inpEle.selectionStart = 0;
+      inpEle.selectionEnd = 1;
+    } else if (key === 'word') {  // 补全单词
+      var word = words[w];
+      for (var j=0;j<word.length;j++) {
+        var node = elements[w][j].firstChild;
+        if (node.nodeType !== 3) { // input
+          inpEle.value = word[j];
+          inpEle.selectionStart = 0;
+          inpEle.selectionEnd = 1;
+        } else {
+          elements[w][j].replaceChild(document.createTextNode(word[j]), node);
+        }
+      }
+    } else if (key === 'part') {  // 补全单词中的元音
+      var word = words[w];
+      for (var j=0;j<word.length;j++) {
+        if (['a', 'e', 'i', 'o', 'u'].indexOf(word[j].toLowerCase())!==-1) {
+          var node = elements[w][j].firstChild;
+          if (node.nodeType !== 3) { // input
+            inpEle.value = word[j];
+            inpEle.selectionStart = 0;
+            inpEle.selectionEnd = 1;
+          } else {
+            elements[w][j].replaceChild(document.createTextNode(word[j]), node);
+          }
+        }
+      }
+    }
+  }
+}
+// 
+function clearInputs() {
+  focus2();
+  for (var i=0;i<elements.length;i++) {
+    for (var j=0;j<elements[i].length;j++) {
+      var oldText = elements[i][j].firstChild,
+          newText = document.createTextNode(" ");
+      elements[i][j].replaceChild(newText, oldText);
+      elements[i][j].classList.contains("x") && elements[i][j].classList.remove("x");
+    }
+  }
+  countInputs();
+}
+//
+function countInputs() {
+  var ccount = 0, cinput = 0, wcount = elements.length, winput = 0, ele = document.getElementById("ir_count");
+  for (var i=0;i<elements.length;i++) {
+    var word_complete_input = 0;
+    for (var j=0;j<elements[i].length;j++) {
+      ccount = ccount + 1;
+      var node = elements[i][j].firstChild;  // may input element
+      var text = node.nodeType !== 3 ? node.value : node.nodeValue;
+      if (text !== " ") {
+        cinput = cinput + 1;
+        word_complete_input = word_complete_input + 1;
+      }
+    }
+    if (word_complete_input === elements[i].length) {
+      winput = winput + 1;
+    }
+  }
+  console.log("words count: ", winput + " / " + wcount + ", chars count: ", cinput + " / " + ccount);
+  if (ele) ele.innerHTML = "📝" + (winput + "/" + wcount + "," + cinput + "/" + ccount);
+  return winput === wcount;
+}
+//
+function checkInputs() {
+  var ccount = 0, cinput = 0, wcount = elements.length, winput = 0, ele = document.getElementById("ir_count");
+  for (var i=0;i<elements.length;i++) {
+    var word_complete_input = 0;
+    for (var j=0;j<elements[i].length;j++) {
+      ccount = ccount + 1;
+      var node = elements[i][j].firstChild;  // may input element
+      var text = node.nodeType !== 3 ? node.value : node.nodeValue;
+      if (text.toLowerCase() === words[i][j].toLowerCase()) {
+        cinput = cinput + 1;
+        word_complete_input = word_complete_input + 1;
+        elements[i][j].classList.contains("x") && elements[i][j].classList.remove("x");
+      } else {
+        !elements[i][j].classList.contains("x") && elements[i][j].classList.add("x");
+      }
+    }
+    if (word_complete_input === elements[i].length) {
+      winput = winput + 1;
+    }
+  }
+  console.log("check result: words count: ", winput + " / " + wcount + ", chars count: ", cinput + " / " + ccount);
+  var wrate = Math.floor(winput * 100 / wcount), crate = Math.floor(cinput * 100 / ccount);
+  if (ele) ele.innerHTML = "📋"  +(winput + "/" + wcount + "=" + wrate + "%" + (wrate >= 80 ? "👍" : "👎") + "," + cinput + "/" + ccount + "=" + wrate + "%" + (crate >= 80 ? "👍" : "👎"));
+}
+
+switchMode();
+-->
+</script>
+</div>
+</body>
+</html>
