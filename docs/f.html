@@ -46,8 +46,6 @@ span#ir_count {
     float: left;
 }
 
-
-
 p, input.i, span.c {
     font-family: Monaco, Menlo, "Ubuntu Mono", Consolas, source-code-pro, monospace;
     font-size: 20px;
@@ -80,6 +78,7 @@ span.s {   /* 单个可输入字符，边框 */
 
 span.f {    /* 获得焦点时，边框变色 */
     border: solid blue 1px;
+	background-color:aliceblue; 
 }
 
 span.x {    /* 错误答案时，用红色显示 */
@@ -89,7 +88,7 @@ span.x {    /* 错误答案时，用红色显示 */
 
 input.i { /* 浮动输入框 */
     border: solid gray 0px;
-    width: 13px;
+    width: 0px;
     /*margin: 1px; */
     text-rendering: auto;
     color: initial;
@@ -104,7 +103,7 @@ input.i { /* 浮动输入框 */
     cursor: text;
     line-height: 38px;
     outline:none;
-
+    background-color:aliceblue; 
 }
 
 input.i:focus { 
@@ -136,7 +135,27 @@ span.w {
 
 @media screen {
 
-    div.answer {
+    div#question.normal {
+        display: none;
+    }
+
+    div#answer.normal {
+        display: block;
+    }
+
+    div#question.exam {
+        display: block;
+    }
+
+    div#answer.exam {
+        display: none;
+    }
+	
+    div#question.finish {
+        display: block;
+    }
+
+    div#answer.finish {
         display: none;
     }
 
@@ -148,8 +167,29 @@ span.w {
         display: none;
     }
     
-    div.answer {
+    div#question.normal {
         display: block;
+    }
+
+    div#answer.normal {
+        display: block;
+		page-break-before: always;
+    }
+
+    div#question.exam {
+        display: block;
+    }
+
+    div#answer.exam {
+        display: none;
+    }
+	
+    div#question.finish {
+        display: block;
+    }
+
+    div#answer.finish {
+        display: none;
     }
 
 }
@@ -188,7 +228,6 @@ function fmtd(_date, _format) {
   return _format;
 }
 
-
 function escapeHtml(unsafe) {
     return unsafe
          .replace(/&/g, "&amp;")
@@ -196,7 +235,33 @@ function escapeHtml(unsafe) {
          .replace(/>/g, "&gt;")
          .replace(/"/g, "&quot;");
 }
-
+//
+var playA = (function SimpleAudioPlayer() {
+  var ele = new Audio(), ready = false;
+  //
+  if (/i(Phone|P(o|a)d)/.test(navigator.userAgent)) {
+    var self = this;
+    //
+	var handler = function(){
+      ele.load();
+      ready = true;
+      return false;
+	  document.removeEventListener("touchstart", handler);
+	};
+	document.addEventListener("touchstart", handler);
+  } else {
+    ready = true;
+  }
+  //  
+  return function(src) {
+	  if (ready) {
+	    ele.pause();
+	    ele.src = src;
+		ele.play();
+	  }
+	}
+})();
+//
 function wrap_tag(t, cls, w) {
   return "<" + t + " class=\"" + cls + "\">" + w + "</" + t + ">";
 }
@@ -290,69 +355,96 @@ var words = ghtml.words;
 var qid = dat.qid;
 //
 var main_html = "<div id=\"header\" class=\"ctl\"></div>" + 
-  "<div class=\"block question\"><div id=\"qheader\" class=\"block\"></div><div>" + ghtml.question + "</div></div>" +
-  "<div class=\"block pbk answer\"><div>" + ghtml.answer + "</div></div>";
+  "<div id=\"question\" class=\"block\"><div id=\"qheader\" class=\"block\"></div><div>" + ghtml.question + "</div></div>" +
+  "<div id=\"answer\" class=\"block\"><div>" + ghtml.answer + "</div></div>";
 document.getElementById("main").innerHTML = main_html;
 // 
 var MODE = 'normal';
 function switchMode(m) {
   m = m === undefined ? "normal" : m;
-
-  // ## 1. 根据 MODE 调整按钮
+  // 
+	
+  // ## 1. 根据 MODE 调整按钮及div样式
   (function(){
+
+    var question_div = document.getElementById("question"),
+      answer_div = document.getElementById("answer");
+    var mm = ["normal", "exam", "finish"],
+	   mpos = mm.indexOf(m);
+	mm.splice(mpos, 1);
+	console.log(mpos, mm, m);
+	for (var i=0;i<mm.length;i++) {
+	  question_div.classList.contains(mm[i]) && question_div.classList.remove(mm[i]);
+	  answer_div.classList.contains(mm[i]) && answer_div.classList.remove(mm[i]);
+	}
+	!question_div.classList.contains(m) && question_div.classList.add(m);
+	!answer_div.classList.contains(m) && answer_div.classList.add(m);
+	// 
     var header_div = document.getElementById("header"),
       qheader_div = document.getElementById("qheader");
     if (m === "normal") {
       header_div.innerHTML = "<div><button id=\"btn_print\">🖨️</button><button id=\"btn_exam\">🎓</button></div>";
       qheader_div.innerHTML = "";
       qheader_div.style.visibility = "hidden";
+	  //
+      var btn_print = document.getElementById("btn_print"),
+        btn_exam = document.getElementById("btn_exam");
+      btn_print.addEventListener("click", function(e){
+        window.print();
+      });
+      btn_exam.addEventListener("click", function(e){
+        switchMode("exam");
+      });
     } else if (m === "exam") {
       header_div.innerHTML = "<div><button id=\"btn_submit\">✅</button><button id=\"btn_cancel\">❎</button></div>";
       qheader_div.innerHTML = "<div class=\"status\"><span id=\"ir_count\"></span><span id=\"remaining\">⌛00:00:00</span></div>";
       qheader_div.style.visibility = "visible";
-    }
+      //
+      var btn_submit = document.getElementById("btn_submit"),
+        btn_cancel = document.getElementById("btn_cancel");
+      btn_submit.addEventListener("click", function(e){
+        var msg = countInputs() ? "是否要提交？" : "看样子还没有答完，确认要提交吗？";
+        if (confirm(msg)) {   // confirm
+          remainingTimer && clearInterval(remainingTimer); remainingTimer = undefined;
+          checkInputs();
+          btn_submit.remove();
+          remainingEle.innerHTML = "⌛" + fmtd(new Date(startAt), 'yyyy-MM-dd hh:mm') + " ~ " + fmtd(new Date(), 'hh:mm');
+	      switchMode("finish");
+          setTimeout(function(){
+            window.print();
+          }, 100);
+        }
+      });
+      btn_cancel.addEventListener("click", function(e) {
+        if (MODE === "finish") {
+          switchMode("normal");
+        } else {
+          if (confirm("测试看样子还没有结束，确认要取消吗？")) {   // confirm
+            remainingTimer && clearInterval(remainingTimer); remainingTimer = undefined;
+            switchMode("normal");
+          }
+        }
+      });
+    } else if (m === "finish") {
+      header_div.innerHTML = "<div><button id=\"btn_back\">🔙</button><button id=\"btn_reload\">🔃</button></div>";
+      var btn_back = document.getElementById("btn_back"),
+        btn_cancel = document.getElementById("btn_cancel");
+      btn_back.addEventListener("click", function(e){
+        switchMode("normal");
+      });
+      btn_reload.addEventListener("click", function(e) {
+        switchMode("exam");
+      });
+	}
   })();
   //
-  var btn_print = document.getElementById("btn_print"),
-      btn_exam = document.getElementById("btn_exam"),
-      btn_submit = document.getElementById("btn_submit"),
-      btn_cancel = document.getElementById("btn_cancel"),
-      remainingEle = document.getElementById("remaining"),
+  var remainingEle = document.getElementById("remaining"),
       remainingTimer, startAt = (new Date()).getTime();
-  btn_print && btn_print.addEventListener("click", function(e){
-    window.print();
-  });
-  btn_exam && btn_exam.addEventListener("click", function(e){
-    switchMode("exam");
-  });
-  //
-  btn_submit && btn_submit.addEventListener("click", function(e){
-    var msg = countInputs() ? "是否要提交？" : "看样子还没有答完，确认要提交吗？";
-    if (confirm(msg)) {   // confirm
-      remainingTimer && clearInterval(remainingTimer); remainingTimer = undefined;
-      checkInputs();
-      btn_submit.remove();
-      remainingEle.innerHTML = "📆" + fmtd(new Date(startAt), 'yyyy-MM-dd hh:mm') + " ~ " + fmtd(new Date(), 'hh:mm');
-      MODE = "finish";
-      setTimeout(function(){
-        window.print();
-      }, 100);
-    }
-  });
-  btn_cancel && btn_cancel.addEventListener("click", function(e) {
-    if (MODE === "finish") {
-      switchMode("normal");
-    } else {
-      if (confirm("是否要取消？")) {   // confirm
-        remainingTimer && clearInterval(remainingTimer); remainingTimer = undefined;
-        switchMode("normal");
-      }
-    }
-  });
   // ## 2. 重置可能已经输入内容
-  clearInputs();
-  //
-  if (m === "exam") {
+  if (m === "normal") {
+    clearInputs();
+  } else if (m === "exam") {
+    clearInputs();
     remainingTimer = setInterval(function(){
       // console.log("remainingTimer...", remainingTimer, remainingEle);
       var diff = Math.floor(((new Date()).getTime() - startAt) / 1000); 
@@ -398,7 +490,7 @@ var inpEle = (function() {
     if (!valid_keydown || ele.value === "") {
       ele.value = " ";
       ele.selectionStart = 0;
-      ele.selectionEnd = 1;
+      ele.selectionEnd = 0;
     }
     countInputs();
     // console.log("input....", valid_keydown);
@@ -406,25 +498,29 @@ var inpEle = (function() {
   
   var valid_keydown = false;
   ele.addEventListener("keydown", function(e){
-    console.log("keydown....", e);
+    // console.log("keydown....", e);
     // var val = e.target.value;
     valid_keydown = true;
     if (e.keyCode === 8) {   // backspace
       ele.value = " ";
-      prevE();
+      nextC(-1);
       countInputs();
-    } else if (e.keyCode === 37 || e.keyCode === 38) {   // left, up
-      prevE();
-    } else if (e.keyCode === 39 || e.keyCode === 40) {   // right or down
-      nextE();
+    } else if (e.keyCode === 38) {   // up
+	  nextW(-1);
+    } else if (e.keyCode === 40) {   // down
+	  nextW(1);
+    } else if (e.keyCode === 37) {   // left
+      nextC(-1);
+    } else if (e.keyCode === 39) {   // right
+      nextC(1);
     } else if (e.keyCode === 46) {   // delete
       ele.value = " ";
       ele.selectionStart = 0;
-      ele.selectionEnd = 1;
+      ele.selectionEnd = 0;
       countInputs();
     } else if (e.keyCode === 32) {   // space
       ele.value = " ";
-      nextE();
+      nextC(1);
       countInputs();
     } else if (e.keyCode === 9 || e.keyCode === 13) {    // tab, enter
       if (e.ctrlKey) {
@@ -432,15 +528,15 @@ var inpEle = (function() {
         btn_submit && (btn_submit.focus() + btn_submit.click());
       } else {
         if (e.shiftKey) {
-          prevE();
+          nextC(-1);
         } else {
-          nextE();
+          nextC(1);
         }
       }
     } else if ( (!e.ctrlKey && !e.altKey && !e.metaKey ) && ((e.keyCode>=65 && e.keyCode<=90) || (e.keyCode>=97 && e.keyCode<=122))) {
       // only a-z accepted.
       ele.value = String.fromCharCode(e.keyCode);
-      nextE();
+      nextC(1);
       countInputs();
     } else if ([186].indexOf(e.keyCode) !== -1) {    // Semicolon:186(;)
       // TODO play audio
@@ -462,7 +558,7 @@ var inpEle = (function() {
   });
   ele.addEventListener("focus", function(e){
     ele.selectionStart = 0;
-    ele.selectionEnd = 1;
+    ele.selectionEnd = 0;
   });
   ele.addEventListener("blur", function(e){ 
     focus2();
@@ -472,6 +568,7 @@ var inpEle = (function() {
 //
 function word_enter(widx) {
   console.log("word_enter...", words[widx]);
+  playA("data:audio/mpeg;base64,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");
 }
 //
 function word_levae(widx) {
@@ -493,9 +590,10 @@ function focus2(target_idc) {
       var m0 = /w([0-9])+c([0-9]+)/.exec(current_idc),
           w0 = parseInt(m0[1]), c0 = parseInt(m0[2]),
           currentEle = elements[w0][c0],
-          currentTextEle = document.createTextNode(inpEle.value || " ");
+		  currentTextEle = currentEle.firstChild;
       // console.log("set current_idc to undefined ....", current_idc, target_idc, currentTextEle);
-      currentEle.replaceChild(currentTextEle, inpEle);
+	  currentTextEle.nodeValue = inpEle.value;
+	  inpEle.remove();
       currentEle.classList.contains("f") && currentEle.classList.remove("f");
       var onchanging = inpEle.getAttribute("onchanging");
       if (onchanging === null) {
@@ -520,7 +618,7 @@ function focus2(target_idc) {
     targetEle.classList.contains("l") && inpEle.classList.add("l");
     targetEle.classList.contains("u") && inpEle.classList.add("u");
     !targetEle.classList.contains("f") && targetEle.classList.add("f");
-    targetEle.replaceChild(inpEle, targetTextEle);
+	targetEle.appendChild(inpEle);
     //
     inpEle.focus();
     current_idc = target_idc;
@@ -531,7 +629,7 @@ function focus2(target_idc) {
   if (current_idc === target_idc) {
     // console.log("current_idc === target_idc ....", current_idc, target_idc);
     inpEle.selectionStart = 0;
-    inpEle.selectionEnd = 1;
+    inpEle.selectionEnd = 0;
     // inpEle.focus();
     return false;
   }
@@ -559,7 +657,7 @@ function focus2(target_idc) {
   targetEle.classList.contains("l") && inpEle.classList.add("l");
   targetEle.classList.contains("u") && inpEle.classList.add("u");
   !targetEle.classList.contains("f") && targetEle.classList.add("f");
-  targetEle.replaceChild(inpEle, targetTextEle);
+  targetEle.appendChild(inpEle);
   // console.log("blur and focus...", currentEle, targetEle);
   inpEle.focus();
   current_idc = target_idc;
@@ -569,58 +667,77 @@ function focus2(target_idc) {
   return true;
 }
 //
-function getEleIdc(direction) {
-  direction = direction === undefined ? 0 : direction;
-
-  var m = /w([0-9])+c([0-9]+)/.exec(current_idc);
-  var w = parseInt(m[1]), c = parseInt(m[2]) + (direction === 0 ? 0 : (direction > 0 ? 1 : -1));
-  var next;
-  //
-  if (direction === 0) {
-    return current_idc;
-  } else if (direction > 0) {
-    // next of current_idc 
-    for (var i=w;i>=0&&i<elements.length && next === undefined;i++) {
-      var word_elements = elements[i];
-      var j = (i === w ? c : 0);
-      for (;j>=0&&j<word_elements.length && next === undefined;j++) {
-        next = "w" + i + "c" + j;
-      }
-    }
-    if (next === undefined) {
-      next = "w0c0";
-    }
-    // 
-    return next;
-  } else if (direction < 0) {
-    // prev of current_idc
-    for (var i=w;i>=0&&i<elements.length && next === undefined;i--) {
-      var word_elements = elements[i];
-      var j = (i === w ? c : word_elements.length-1);
-      for (;j>=0&&j<word_elements.length && next === undefined;j--) {
-        next = "w" + i + "c" + j;
-      }
-    }
-    if (next === undefined) {
-      next = "w" + (elements.length - 1) + "c" + (elements[elements.length - 1].length - 1);
-    }
-    return next;
-  }
-}
-//
-function nextE() {
-  focus2(getEleIdc(1));
-}
-//
-function prevE() {
-  focus2(getEleIdc(-1));
-}
-//
 function nextC(direction) { // 下一个字符
-
+  function nextCIdc(direction) {
+    direction = direction === undefined ? 0 : direction;
+  
+    var m = /w([0-9])+c([0-9]+)/.exec(current_idc);
+    var w = parseInt(m[1]), c = parseInt(m[2]) + (direction === 0 ? 0 : (direction > 0 ? 1 : -1));
+    var next;
+    //
+    if (direction === 0) {
+      return current_idc;
+    } else if (direction > 0) {
+      // next of current_idc 
+      for (var i=w;i>=0&&i<elements.length && next === undefined;i++) {
+        var word_elements = elements[i];
+        var j = (i === w ? c : 0);
+        for (;j>=0&&j<word_elements.length && next === undefined;j++) {
+          next = "w" + i + "c" + j;
+        }
+      }
+      if (next === undefined) {
+        next = "w0c0";
+      }
+      // 
+      return next;
+    } else if (direction < 0) {
+      // prev of current_idc
+      for (var i=w;i>=0&&i<elements.length && next === undefined;i--) {
+        var word_elements = elements[i];
+        var j = (i === w ? c : word_elements.length-1);
+        for (;j>=0&&j<word_elements.length && next === undefined;j--) {
+          next = "w" + i + "c" + j;
+        }
+      }
+      if (next === undefined) {
+        next = "w" + (elements.length - 1) + "c" + (elements[elements.length - 1].length - 1);
+      }
+      return next;
+    }
+  }
+  //
+  focus2(nextCIdc(direction));
 }
 function nextW(direction) { // 下一个单词
-
+  function nextWIdc(direction) {
+    direction = direction === undefined ? 0 : direction;
+    var m = /w([0-9])+c([0-9]+)/.exec(current_idc);
+    var w = parseInt(m[1])+ (direction === 0 ? 0 : (direction > 0 ? 1 : -1));
+    var next;
+    //
+    if (direction === 0) {
+      return current_idc;
+    } else if (direction > 0) {
+	  for (var i=w;i>=0&&i<elements.length && next === undefined;i++) {
+          next = "w" + i + "c0";
+      }
+      if (next === undefined) {
+        next = "w0c0";
+      }
+      // 
+      return next;
+    } else if (direction < 0) {
+      for (var i=w;i>=0&&i<elements.length && next === undefined;i--) {
+          next = "w" + i + "c0";
+      }
+      if (next === undefined) {
+        next = "w" + (elements.length - 1) + "c0";
+      }
+      return next;
+    }
+  }
+  focus2(nextWIdc(direction));
 }
 //
 function input_correct(key) {
@@ -631,7 +748,7 @@ function input_correct(key) {
     if (key === 'char') {       // 补全字符
       inpEle.value = words[w][c];
       inpEle.selectionStart = 0;
-      inpEle.selectionEnd = 1;
+      inpEle.selectionEnd = 0;
     } else if (key === 'word') {  // 补全单词
       var word = words[w];
       for (var j=0;j<word.length;j++) {
@@ -639,7 +756,7 @@ function input_correct(key) {
         if (node.nodeType !== 3) { // input
           inpEle.value = word[j];
           inpEle.selectionStart = 0;
-          inpEle.selectionEnd = 1;
+          inpEle.selectionEnd = 0;
         } else {
           elements[w][j].replaceChild(document.createTextNode(word[j]), node);
         }
@@ -652,7 +769,7 @@ function input_correct(key) {
           if (node.nodeType !== 3) { // input
             inpEle.value = word[j];
             inpEle.selectionStart = 0;
-            inpEle.selectionEnd = 1;
+            inpEle.selectionEnd = 0;
           } else {
             elements[w][j].replaceChild(document.createTextNode(word[j]), node);
           }
