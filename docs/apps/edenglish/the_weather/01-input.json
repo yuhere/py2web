@@ -83,7 +83,8 @@
       "celsius",
       "temperature",
       "degrees",
-      "weather"
+      "weather",
+      "negative"
     ],
     "excludes": [
       "listen",
@@ -213,7 +214,6 @@
       "luckily",
       "topic",
       "range",
-      "negative",
       "study",
       "today",
       "speaking",
