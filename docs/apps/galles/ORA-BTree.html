@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>B-Tree Visualization</title>
+    <!-- css sheet for how the page is laid out -->
+    <link rel="stylesheet" href="visualizationPageStyle.css">
+    <!-- jqueury stuff.  Only used for the animation speed slider. -->
+    <link rel="stylesheet" href="ThirdParty/jquery-ui-1.8.11.custom.css">
+    <script src="ThirdParty/jquery-1.5.2.min.js"></script>
+    <script src="ThirdParty/jquery-ui-1.8.11.custom.min.js"></script>
+
+    <!-- Javascript for the actual visualization code -->
+    <script type = "text/javascript" src = "AnimationLibrary/CustomEvents.js"> </script>
+    <script type = "text/javascript" src = "AnimationLibrary/UndoFunctions.js"> </script>
+    <script type = "text/javascript" src = "AnimationLibrary/AnimatedObject.js"> </script>
+    <script type = "text/javascript" src = "AnimationLibrary/AnimatedLabel.js"> </script>
+    <script type = "text/javascript" src = "AnimationLibrary/AnimatedCircle.js"> </script>
+    <script type = "text/javascript" src = "AnimationLibrary/AnimatedRectangle.js"> </script>
+    <script type = "text/javascript" src = "AnimationLibrary/AnimatedLinkedList.js"> </script>
+    <script type = "text/javascript" src = "AnimationLibrary/HighlightCircle.js"> </script>
+    <script type = "text/javascript" src = "AnimationLibrary/Line.js"> </script>
+    <script type = "text/javascript" src = "AnimationLibrary/AnimatedBTreeNode.js"> </script>
+
+    <script type = "text/javascript" src = "AnimationLibrary/ObjectManager.js"> </script>
+    <script type = "text/javascript" src = "AnimationLibrary/AnimationMain.js"> </script>
+    <script type = "text/javascript" src = "AlgorithmLibrary/Algorithm.js"> </script>
+    <script type = "text/javascript" src = "AlgorithmLibrary/BTree.js"> </script>
+    
+    <script type = "text/javascript" src = "Macro/macro_parser.js"> </script>
+</head>
+<body class="VisualizationMainPage">
+    <div id = "container">
+        <div id="header">
+            <h1>B-Trees</h1>
+        </div>
+        <div id = "mainContent">
+          <div id = "algoControlSection">
+            <!-- Table for buttons to control specific animation (insert/find/etc) -->
+            <!-- (filled in by javascript code specific to the animtion) -->
+            <table id="AlgorithmSpecificControls"> </table>
+          </div>
+          <!-- Drawing canvas where all animation is done.  Note:  can be resized in code -->
+          <canvas id="canvas" width="1000" height="500"></canvas>
+          <div id = "generalAnimationControlSection">
+             <!-- Table for buttons to control general animation (play/pause/undo/etc) ->
+             <!-- (filled in by javascript code, specifically AnimationMain.js)  -->
+             <table id="GeneralAnimationControls">  </table>
+          </div>
+        </div> <!-- mainContent -->
+        <div id="footer">
+            <p><a href="Algorithms.html">Algorithm Visualizations</a></p>
+        </div>
+    </div><!-- container -->
+    <div style="position:fixed; right:0px;top:0px;width:200px;line-height:30px;background:#FC6; border:1px solid #F90;">
+      <div>Macro</div>
+      <div>
+      <textarea id="macro_txt" style="margin: 0px;width: 193px;height: 272px;resize: none;overflow: scroll">insert(1)
+insert(20)
+insert(300)
+insert(4000)
+find(20)
+delete(1)
+</textarea>
+      </div>
+      <div>
+      <button id="b-run">Run</button>
+      </div>
+      <script>
+          function __init__() {
+            function promise_sleep(msec){
+                var defer = new $.Deferred();
+                setTimeout(function(){
+                    defer.resolve()
+                }, msec)
+                return defer.promise();
+            };
+            function promise_each(list, func_to_apply, retain) {
+                var defer = new $.Deferred();
+                // @@@@@@@@@@@@@@@@
+                var _closure_per_item = function (_previous, _list, _i) {
+                  var defer = new $.Deferred();
+                  _previous.then(function (results) {
+                    func_to_apply(_list[_i], _i).then(function (result) {
+                      retain && results.push(result);
+                      defer.resolve(results);
+                    }, defer.reject)
+                  }, defer.reject);
+                  return defer.promise();
+                };
+                var last = retain ? $.when([]) : $.when();
+                for (var i = 0; i < list.length; i++) {
+                  last = _closure_per_item(last, list, i);
+                }
+                last.then(defer.resolve, defer.reject);
+                // @@@@@@@@@@@@@@@@
+                return defer.promise();
+            }
+            function buildErrorMessage(e) {
+              return e.location !== undefined
+                ? "SyntaxError: Line " + e.location.start.line + ", column " + e.location.start.column // + ": " + e.message
+                : e.message;
+            }
+            //
+            var _old_enableUI = BTree.prototype.enableUI,
+                _old_disableUI = BTree.prototype.disableUI;
+            var animation_listener = undefined;
+            BTree.prototype.enableUI = function(event) {
+              _old_enableUI.call(this, event);
+              typeof animation_listener === "function" && animation_listener.call(this, "AnimationEnded");
+            };
+            BTree.prototype.disableUI = function(event) {
+              _old_disableUI.call(this, event);
+              typeof animation_listener === "function" && animation_listener.call(this, "AnimationStarted");
+            };
+            // @@@@@@@@@@@@@@@@@@@@@@@@@@@
+            init();
+            // @@@@@@@@@@@@@@@@@@@@@@@@@@@
+            var _iAction = function(impl) {
+                return function(val){
+                    console.log("val..", val)
+                    var defer = new $.Deferred();
+                    animation_listener = function(evt){
+                      if (evt === "AnimationEnded") {
+                        animation_listener = undefined;
+                        promise_sleep(2).then(function(){
+                          defer.resolve();
+                        });
+                      }
+                    };
+                    currentAlg.implementAction(impl.bind(currentAlg), currentAlg.normalizeNumber(val, 4));
+                    return defer.promise();
+                }
+            } , MACRO_CMDS = {
+              "insert":   _iAction(currentAlg.insertElement), 
+              "delete":   _iAction(currentAlg.deleteElement), 
+              "find"  :   _iAction(currentAlg.findElement)
+            }, run_cmds = function(cmds) {
+                return promise_each(cmds, function(cmd, idx){
+                    return MACRO_CMDS[cmd["fn"]](cmd["val"]);
+                }, true);
+            };
+
+            $("#b-run").bind("click", function(e) {
+                try {
+                  var cmd_list = macro_parser.parse($("#macro_txt").val());
+                  run_cmds(cmd_list);
+                } catch (e) {
+                  console.error(buildErrorMessage(e));
+                }
+            });
+          }
+          $(window).bind("load", __init__);
+
+      </script>
+    </div>
+</body>
+</html>
