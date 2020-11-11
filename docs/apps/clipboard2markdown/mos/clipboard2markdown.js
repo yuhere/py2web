@@ -118,7 +118,7 @@ function cell (content, node) {
       filter: 'li',
       replacement: function (content, node) {
         content = content.replace(/^\s+/, '').replace(/\n/gm, '\n    ');
-        var prefix = '-   ';
+        var prefix = '- ';
         var parent = node.parentNode;
 
         if (/ol/i.test(parent.nodeName)) {
