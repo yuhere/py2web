@@ -75,15 +75,16 @@
         return node.nodeName === 'A' && node.getAttribute('href');
       },
       replacement: function (content, node) {
-        var url = node.getAttribute('href');
-        var titlePart = node.title ? ' "' + node.title + '"' : '';
-        if (content === url) {
-          return '<' + url + '>';
-        } else if (url === ('mailto:' + content)) {
-          return '<' + content + '>';
-        } else {
-          return '[' + content + '](' + url + titlePart + ')';
-        }
+        return content；
+        // var url = node.getAttribute('href');
+        // var titlePart = node.title ? ' "' + node.title + '"' : '';
+        // if (content === url) {
+        //   return '<' + url + '>';
+        // } else if (url === ('mailto:' + content)) {
+        //   return '<' + content + '>';
+        // } else {
+        //   return '[' + content + '](' + url + titlePart + ')';
+        // }
       }
     },
 
