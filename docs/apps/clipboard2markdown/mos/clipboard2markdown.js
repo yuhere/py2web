@@ -163,7 +163,7 @@
                   // console.log(items[i],items[i].type)
                   if (items[i].type==="text/html") { // if (items[i].type.indexOf('html') !== -1)
                       items[i].getAsString(function (html){
-                          var mdtxt = html2md(html);
+                          var mdtxt = convert(html);
                           patse2cm(mdtxt);
                       });
                       evt.preventDefault();
