@@ -191,6 +191,7 @@ function cell (content, node) {
                   if (items[i].type==="text/html") { // if (items[i].type.indexOf('html') !== -1)
                       items[i].getAsString(function (html){
                           var mdtxt = convert(html);
+                        console.log("....", html, mdtxt);
                           patse2cm(mdtxt);
                       });
                       evt.preventDefault();
