@@ -149,8 +149,8 @@ function cell (content, node) {
               .replace(/\n-\n/g, '\n')
               .replace(/\n\n\s*\\\n/g, '\n\n')
               .replace(/\n\n\n*/g, '\n\n')
-              .replace(/[ ]+$/gm, '')
-              .replace(/^\s+|[\s\\]+$/g, '');
+              .replace(/[ ]+$/gm, '');
+              // .replace(/^\s+|[\s\\]+$/g, '');
   };
 
   var convert = function (str) {
