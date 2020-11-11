@@ -62,7 +62,7 @@ function cell (content, node) {
     {
       filter: 'br',
       replacement: function () {
-        return '\\\n';
+        return '\n';
       }
     },
 
