@@ -7,8 +7,8 @@ function cell (content, node) {
   var prefix = ' '
   // if (index === 0) prefix = '| '
   // return prefix + content + ' |'
-  if (index === 0) prefix = ' '
-  return prefix + content + '\t'
+  if (index === 0) return content;
+  return '\t' + content;
 }
   
   
