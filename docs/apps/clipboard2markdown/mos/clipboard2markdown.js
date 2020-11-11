@@ -1,8 +1,34 @@
 (function () {
   'use strict';
 
+  
+function cell (content, node) {
+  var index = Array.prototype.indexOf.call(node.parentNode.childNodes, node)
+  var prefix = ' '
+  // if (index === 0) prefix = '| '
+  // return prefix + content + ' |'
+  if (index === 0) prefix = ' '
+  return prefix + content + '\t'
+}
+  
+  
   // http://pandoc.org/README.html#pandocs-markdown
   var pandoc = [
+    {
+      filter: ['th', 'td'],
+      replacement: function (content, node) {
+        return cell(content, node)
+      }
+    },
+
+    {
+      filter: 'tr',
+      replacement: function (content, node) {
+        var borderCells = ''
+        return '\n' + content + (borderCells ? '\n' + borderCells : '')
+      }
+    },
+    
     {
       filter: 'h1',
       replacement: function (content, node) {
