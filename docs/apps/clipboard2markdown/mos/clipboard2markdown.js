@@ -148,15 +148,39 @@
       }
     });
 
-    pastebin.addEventListener('paste', function () {
-      setTimeout(function () {
-        var html = pastebin.innerHTML;
-        var markdown = convert(html);
-        output.value = markdown;
-        wrapper.classList.remove('hidden');
-        output.focus();
-        output.select();
-      }, 200);
+    document.addEventListener('paste', function (evt) {
+          function patse2cm(markdown) {
+             output.value = markdown;
+             wrapper.classList.remove('hidden');
+             output.focus();
+             output.select();
+          }
+          // console.log("on paste...", evt);
+          let items = evt.clipboardData && evt.clipboardData.items;
+          let file = null;
+          if (items && items.length) {
+              for (let i = 0; i < items.length; i++) {
+                  // console.log(items[i],items[i].type)
+                  if (items[i].type==="text/html") { // if (items[i].type.indexOf('html') !== -1)
+                      items[i].getAsString(function (html){
+                          var mdtxt = html2md(html);
+                          patse2cm(mdtxt);
+                      });
+                      evt.preventDefault();
+                      evt.stopPropagation();
+                      break;
+                  }
+              }
+          }
+      
+      // setTimeout(function () {
+      //   var html = pastebin.innerHTML;
+      //   var markdown = convert(html);
+      //   output.value = markdown;
+      //   wrapper.classList.remove('hidden');
+      //   output.focus();
+      //   output.select();
+      // }, 200);
     });
   });
 })();
