@@ -75,7 +75,8 @@ function cell (content, node) {
     {
       filter: 'hr',
       replacement: function () {
-        return '\n\n* * * * *\n\n';
+        // return '\n\n* * * * *\n\n';
+        return '\n';
       }
     },
 
