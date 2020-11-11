@@ -148,7 +148,7 @@
       }
     });
 
-    document.addEventListener('paste', function (evt) {
+    pastebin.addEventListener('paste', function (evt) {
           function patse2cm(markdown) {
              output.value = markdown;
              wrapper.classList.remove('hidden');
