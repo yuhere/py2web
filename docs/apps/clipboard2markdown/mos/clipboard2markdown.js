@@ -28,6 +28,12 @@ function cell (content, node) {
         return '\n' + content + (borderCells ? '\n' + borderCells : '')
       }
     },
+  {
+    filter: 'img',
+    replacement: function (content, node) {
+      return '';
+    }
+  },
     
     {
       filter: 'h1',
