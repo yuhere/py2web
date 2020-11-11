@@ -75,7 +75,7 @@
         return node.nodeName === 'A' && node.getAttribute('href');
       },
       replacement: function (content, node) {
-        return content；
+        return content;
         // var url = node.getAttribute('href');
         // var titlePart = node.title ? ' "' + node.title + '"' : '';
         // if (content === url) {
