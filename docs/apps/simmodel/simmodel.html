@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Sentences Similarity</title>
+    <meta name="viewport" content="initial-scale=1.0"/>
+    <style>body {min-width: 600px;min-height: 400px;}</style>
+    <script src="jquery-2.2.4.js" type="application/javascript"></script>
+    <script src="diff_match_patch.js" type="application/javascript"></script>
+    <script src="nlp-tokenize.js" type="application/javascript"></script>
+    <script src="simmodel.js" type="application/javascript"></script>
+</head>
+<body>
+<div>Corpus: <textarea style="height:180px;width:800px" id="examples">Human machine interface for lab abc computer applications
+A survey of user opinion of computer system response time
+The EPS user interface management system
+System and human system engineering testing of EPS
+Relation of user perceived response time to error measurement
+The generation of random binary unordered trees
+The intersection graph of paths in trees
+Graph minors IV Widths of trees and well quasi ordering
+Graph minors A survey</textarea>
+<button id="mk">ReBuild</button></div>
+<hr/>
+<div> 
+    <fieldset>
+        <legend>Corpus Summary:</legend>
+        <div id="model" style="width:800px"/>
+    </fieldset>
+</div>
+<hr/>
+<div> 
+    <fieldset>
+        <legend>Score Algorithm:</legend>
+        <label><input name="algorithm" type="radio" value="cos" checked="true"/> Cosine<label>
+        <label><input name="algorithm" type="radio" value="mind"/> Min Distance<label>
+        <label><input name="algorithm" type="radio" value="diff"/> Diff<label>
+    </fieldset>
+</div>
+<hr/>
+<div>Input: <input id="inp" style="width:800px"/></div>
+<hr/>
+<div id="output"></div>
+</body>
+</html>
+</html>
