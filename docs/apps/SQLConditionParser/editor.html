@@ -1,0 +1,622 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="author" content="Futago-za Ryuu (futagoza.ryuu@gmail.com)">
+    <meta name="copyright" content="Copyright &copy; 2017 Futago-za Ryuu">
+    <meta name="keywords" content="parser generator, PEG, JavaScript">
+    <meta name="description" content="PEG.js is a parser generator for JavaScript based on the parsing expression grammar formalism.">
+    <title>PEG.js &ndash; Parser Generator for JavaScript</title>
+    <link rel="stylesheet" href="css/common.css">
+    <link rel="stylesheet" href="css/layout-online.css">
+    <link rel="stylesheet" href="css/content.css">
+    <link rel="stylesheet" href="vendor/codemirror/codemirror.css">
+    <!--[if IE]>
+    <script>
+        var html5elements = ["aside", "footer", "header", "nav"];
+        for (var i = 0; i < html5elements.length; i++) {
+          document.createElement(html5elements[i]);
+        }
+    </script>
+    <![endif]-->
+</head>
+
+<body>
+    <div id='main'>
+        <header id="header">
+            <h1><a href="#">PEG.js</a></h1>
+            <h2>Parser Generator for JavaScript</h2>
+        </header>
+
+        <nav id="menu">
+            <a href="#">Online Version</a>
+        </nav>
+
+        <div id="loader"> <div id="loader-inner">Loading...</div> </div>
+        <div id="content">
+<table id="columns">
+    <tr>
+        <td>
+            <table class="column online" id="left-column">
+                <tr>
+                    <td class="content-height">
+                        <h2 class="suggestion top">
+                            <span class="step-number">1</span>
+                            <div class="step-title">Write your PEG.js grammar</div>
+                        </h2>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <div class="textarea-wrapper">
+                            <textarea class="code" id="grammar" autocomplete="off" autocorrect="off"
+                                autocapitalize="off" spellcheck="false" disabled>{
+  var reservedMap = {
+    'ALL': true,
+    'AND': true,
+    'AS': true,
+    'ASC': true,
+
+    'BETWEEN': true,
+    'BY': true,
+
+    'CASE': true,
+    'CREATE': true,
+    'CONTAINS': true,
+    'CURRENT_DATE': true,
+    'CURRENT_TIME': true,
+    'CURRENT_TIMESTAMP': true,
+    'CURRENT_USER': true,
+
+    'DAY': true,
+    'DELETE': true,
+    'DESC': true,
+    'DISTINCT': true,
+    'DROP': true,
+
+    'ELSE': true,
+    'END': true,
+    'EXISTS': true,
+    'EXPLAIN': true,
+
+    'FALSE': true,
+    'FROM': true,
+    'FULL': true,
+
+    'GROUP': true,
+
+    'HAVING': true,
+    'HOUR': true,
+
+    'IN': true,
+    'INDEX': true,
+    'INNER': true,
+    'INSERT': true,
+    'INTO': true,
+    'INTERVAL': true,
+    'IS': true,
+
+    'JOIN': true,
+    'JSON': true,
+
+    'LEFT': true,
+    'LIKE': true,
+    'LIMIT': true,
+
+    'MICROSECOND': true,
+    'MINUTE': true,
+    'MONTH': true,
+
+    'NOT': true,
+    'NULL': true,
+
+    'ON': true,
+    'OR': true,
+    'ORDER': true,
+    'OUTER': true,
+
+    'QUARTER': true,
+
+    'RECURSIVE': true,
+    'REPLACE': true,
+    'RIGHT': true,
+
+    'SECOND': true,
+    'SELECT': true,
+    'SESSION_USER': true,
+    'SET': true,
+    'SHOW': true,
+    'STATUS': true, // reserved (MySQL)
+    'SYSTEM_USER': true,
+
+    'TABLE': true,
+    'THEN': true,
+    'TRUE': true,
+    'TYPE': true,   // reserved (MySQL)
+
+    'UNION': true,
+    'UPDATE': true,
+    'USER': true,
+    'USING': true,
+
+    'VALUES': true,
+
+    'WITH': true,
+    'WEEK': true,
+    'WHEN': true,
+    'WHERE': true,
+
+    'YEAR': true
+  };
+
+  function createUnaryExpr(operator, expr) {
+    return { type: 'unary_expr', operator, expr };
+  }
+
+  function createBinaryExpr(operator, left, right) {
+    return { type: 'binary_expr', operator, left, right };
+  }
+
+  function createList(head, tail) {
+    return [head, ...tail.map(item => item[3])];
+  }
+
+  function createBinaryExprChain(head, tail) {
+    return tail.reduce((result, item) => createBinaryExpr(item[1], result, item[3]), head);
+  }
+
+}
+
+start
+  = where_clause
+
+where_clause "Condition clause"
+  = __ e:expr? { return e; }
+
+expr_list
+  = head:expr tail:(__ COMMA __ expr)* {
+      return { type: 'expr_list', value: createList(head, tail) };
+    }
+
+case_when_then
+  = KW_WHEN __ condition:expr __ KW_THEN __ result:expr __ {
+    return {
+      type: 'when',
+      cond: condition,
+      result: result
+    };
+  }
+
+case_else = KW_ELSE __ result:expr {
+    return { type: 'else', result: result };
+  }
+
+/**
+ * Borrowed from PL/SQL ,the priority of below list IS ORDER BY DESC
+ * ---------------------------------------------------------------------------------------------------
+ * | +, -                                                     | identity, negation                   |
+ * | *, /                                                     | multiplication, division             |
+ * | +, -                                                     | addition, subtraction, concatenation |
+ * | =, <, >, <=, >=, <>, !=, IS, LIKE, BETWEEN, IN           | comparion                            |
+ * | !, NOT                                                   | logical negation                     |
+ * | AND                                                      | conjunction                          |
+ * | OR                                                       | inclusion                            |
+ * ---------------------------------------------------------------------------------------------------
+ */
+
+expr
+  = or_expr __
+
+or_expr
+  = head:and_expr tail:(__ KW_OR __ and_expr)* {
+      return createBinaryExprChain(head, tail);
+    }
+
+and_expr
+  = head:not_expr tail:(__ KW_AND __ not_expr)* {
+      return createBinaryExprChain(head, tail);
+    }
+
+// here we should use `NOT` instead of `comparison_expr` to support chain-expr
+not_expr
+  = comparison_expr
+  / (KW_NOT / "!" !"=") __ expr:not_expr {
+      return createUnaryExpr('NOT', expr);
+    }
+
+comparison_expr
+  = left:additive_expr __ rh:comparison_op_right? {
+      if (rh === null) return left;
+      else if (rh.type === 'arithmetic') return createBinaryExprChain(left, rh.tail);
+      else return createBinaryExpr(rh.op, left, rh.right);
+    }
+
+comparison_op_right
+  = arithmetic_op_right
+  / in_op_right
+  / between_op_right
+  / is_op_right
+  / like_op_right
+
+arithmetic_op_right
+  = l:(__ arithmetic_comparison_operator __ additive_expr)+ {
+      return { type: 'arithmetic', tail: l };
+    }
+
+arithmetic_comparison_operator
+  = ">=" / ">" / "<=" / "<>" / "<" / "=" / "!="
+
+
+in_op_right
+  = op:in_op __ LPAREN  __ l:expr_list __ RPAREN {
+      return { op, right: l };
+    }
+
+between_op_right
+  = op:between_or_not_between_op __  begin:additive_expr __ KW_AND __ end:additive_expr {
+      return {
+        op,
+        right: {
+          type: 'expr_list',
+          value: [begin, end]
+        }
+      };
+    }
+
+between_or_not_between_op
+  = nk:(KW_NOT __ KW_BETWEEN) { return nk[0] + ' ' + nk[2]; }
+  / KW_BETWEEN
+
+
+like_op
+  = nk:(KW_NOT __ KW_LIKE) { return nk[0] + ' ' + nk[2]; }
+  / KW_LIKE
+
+in_op
+  = nk:(KW_NOT __ KW_IN) { return nk[0] + ' ' + nk[2]; }
+  / KW_IN
+
+like_op_right
+  = op:like_op __ right:comparison_expr {
+      return { op, right: right };
+    }
+
+is_op_right
+  = KW_IS __ right:additive_expr {
+      return { op: 'IS', right };
+    }
+  / (KW_IS __ KW_NOT) __ right:additive_expr {
+      return { op: 'IS NOT', right };
+  }
+
+
+additive_expr
+  = head:multiplicative_expr
+    tail:(__ additive_operator  __ multiplicative_expr)* {
+      return createBinaryExprChain(head, tail);
+    }
+
+additive_operator
+  = "+" / "-" / "||"
+
+multiplicative_expr
+  = head:primary
+    tail:(__ multiplicative_operator  __ primary)* {
+      return createBinaryExprChain(head, tail);
+    }
+
+multiplicative_operator
+  = "*" / "/" / "%"
+
+primary
+  = literal
+  / func_call
+  / case_expr
+  / column_ref
+  / LPAREN __ e:expr __ RPAREN {
+      return { ...e, parentheses: true };
+    }
+  / LPAREN __ list:expr_list __ RPAREN {
+        return { ...list, parentheses: true };
+    }
+
+column_ref
+  = tbl:ident __ DOT __ col:column {
+      return {
+        type: 'column_ref',
+        table: tbl,
+        column: col, location: location()
+      };
+    }
+  / col:column {
+      return {
+        type: 'column_ref',
+        table: null,
+        column: col, location: location()
+      };
+    }
+
+column_list
+  = head:column tail:(__ COMMA __ column)* {
+      return createList(head, tail);
+    }
+
+ident
+  = name:ident_name !{ return reservedMap[name.toUpperCase()] === true; } {
+      return name;
+    }
+  / name:quoted_ident {
+      return name;
+    }
+
+quoted_ident
+  = double_quoted_ident
+  / single_quoted_ident
+  / backticks_quoted_ident
+
+double_quoted_ident
+  = '"' chars:[^"]+ '"' { return chars.join(''); }
+
+single_quoted_ident
+  = "'" chars:[^']+ "'" { return chars.join(''); }
+
+backticks_quoted_ident
+  = "`" chars:[^`]+ "`" { return chars.join(''); }
+
+column
+  = name:column_name !{ return reservedMap[name.toUpperCase()] === true; } { return name; }
+  / quoted_ident
+
+column_name
+  =  start:ident_start parts:column_part* { return start + parts.join(''); }
+
+ident_name
+  =  start:ident_start parts:ident_part* { return start + parts.join(''); }
+
+ident_start = [A-Za-z_]
+
+ident_part  = [A-Za-z0-9_]
+
+// to support column name like `cf1:name` in hbase
+column_part  = [A-Za-z0-9_:]
+
+func_call
+  = name:ident __ LPAREN __ l:expr_list? __ RPAREN {
+      return { type: 'function', name, args: l ? l : { type: 'expr_list', value: [] }, location: location() };
+    }
+  / name:scalar_func {
+      return { type: 'function', name, args: { type: 'expr_list', value: [] }, location: location() };
+    }
+
+scalar_func
+  = "SYSDATE"i
+
+case_expr "CASE expression"
+  = KW_CASE                         __
+    expr:expr?                      __
+    condition_list:case_when_then+  __
+    otherwise:case_else?            __
+    KW_END __ KW_CASE? {
+      if (otherwise) condition_list.push(otherwise);
+      return {
+        type: 'case',
+        expr: expr || null,
+        args: condition_list
+      };
+    }
+
+literal
+  = literal_string
+  / literal_numeric
+  / literal_bool
+  / literal_null
+
+literal_null
+  = KW_NULL __ {
+      return { type: 'null', value: null };
+    }
+
+literal_bool
+  = KW_TRUE __ {
+      return { type: 'bool', value: true };
+    }
+  / KW_FALSE __ {
+      return { type: 'bool', value: false };
+    }
+
+literal_string
+  = ca:("'" single_char* "'") __ {
+      return {
+        type: 'string',
+        value: ca[1].join('')
+      };
+    }
+
+single_char
+  = [^'\\\0-\x1F\x7f]
+  / escape_char
+
+escape_char
+  = "\\'"  { return "'";  }
+  / '\\"'  { return '"';  }
+  / "\\\\" { return "\\"; }
+  / "\\/"  { return "/";  }
+  / "\\b"  { return "\b"; }
+  / "\\f"  { return "\f"; }
+  / "\\n"  { return "\n"; }
+  / "\\r"  { return "\r"; }
+  / "\\t"  { return "\t"; }
+  / "''"   { return "\'"; }
+  / "\\u" h1:hexDigit h2:hexDigit h3:hexDigit h4:hexDigit {
+      return String.fromCharCode(parseInt("0x" + h1 + h2 + h3 + h4));
+    }
+
+literal_numeric
+  = value:number {
+      return { type: 'number', value };
+    }
+
+number
+  = int_:int frac:frac exp:exp __ { return parseFloat(int_ + frac + exp); }
+  / int_:int frac:frac __         { return parseFloat(int_ + frac); }
+  / int_:int exp:exp __           { return parseFloat(int_ + exp); }
+  / int_:int __                   { return parseFloat(int_); }
+
+int
+  = digits
+  / digit:digit
+  / op:("-" / "+" ) digits:digits { return op + digits; }
+  / op:("-" / "+" ) digit:digit { return op + digit; }
+
+frac
+  = "." digits:digits { return "." + digits; }
+
+exp
+  = e:e digits:digits { return e + digits; }
+
+digits
+  = digits:digit+ { return digits.join(""); }
+
+digit   = [0-9]
+
+hexDigit
+  = [0-9a-fA-F]
+
+e
+  = e:[eE] sign:[+-]? { return e + (sign !== null ? sign: ''); }
+
+// keywords
+KW_NULL     = "NULL"i       !ident_start
+KW_TRUE     = "TRUE"i       !ident_start
+KW_FALSE    = "FALSE"i      !ident_start
+
+KW_BETWEEN  = "BETWEEN"i    !ident_start { return 'BETWEEN'; }
+KW_IN       = "IN"i         !ident_start { return 'IN'; }
+KW_IS       = "IS"i         !ident_start { return 'IS'; }
+KW_LIKE     = "LIKE"i       !ident_start { return 'LIKE'; }
+
+KW_NOT      = "NOT"i        !ident_start { return 'NOT'; }
+KW_AND      = "AND"i        !ident_start { return 'AND'; }
+KW_OR       = "OR"i         !ident_start { return 'OR'; }
+
+
+KW_CASE     = "CASE"i       !ident_start
+KW_WHEN     = "WHEN"i       !ident_start
+KW_THEN     = "THEN"i       !ident_start
+KW_ELSE     = "ELSE"i       !ident_start
+KW_END      = "END"i        !ident_start
+
+//special character
+DOT       = '.'
+COMMA     = ','
+LPAREN    = '('
+RPAREN    = ')'
+
+// separator
+__
+  = (whitespace / comment)*
+
+comment
+  = block_comment
+  / line_comment
+
+block_comment
+  = "/*" (!"*/" char)* "*/"
+
+line_comment
+  = "--" (!EOL char)*
+
+char = .
+
+whitespace =
+  [ \t\n\r]
+
+EOL
+  = EOF
+  / [\n\r]+
+
+EOF = !.
+</textarea>
+                        </div>
+                    </td>
+                </tr>
+                <tr>
+                    <td class="content-height">
+                        <div id="build-message" class="message progress">Loading...</div>
+                    </td>
+                </tr>
+            </table>
+        </td>
+        <td>
+            <table class="column" id="right-column">
+                <tr>
+                    <td class="content-height">
+                        <h2 class="suggestion top">
+                            <span class="step-number">2</span>
+                            <div class="step-title">Test the generated parser with some input</div>
+                        </h2>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <div class="textarea-wrapper">
+                            <textarea class="code" id="input" autocomplete="off" autocorrect="off" autocapitalize="off"
+                                spellcheck="false" disabled>a = 2 and v = 'a' || b || '1'
+and (b = 2 + 1.2 and c = x(d,2 ,'a'))
+or f is null and g like ''</textarea>
+                        </div>
+                    </td>
+                </tr>
+                <tr>
+                    <td class="content-height">
+                        <div id="parse-message" class="message disabled">Parser not available.</div>
+                    </td>
+                </tr>
+                <tr>
+                    <td class="content-height">
+                        <h2 id="output-header">Output</h2>
+                        <pre id="output" class="disabled">Output not available.</pre>
+                    </td>
+                </tr>
+                <tr>
+                    <td class="content-height">
+                        <h2 class="suggestion">
+                            <span class="step-number">3</span>
+                            <div class="step-title">Download the parser code</div>
+                        </h2>
+                    </td>
+                </tr>
+                <tr>
+                    <td class="content-height">
+                        <input type="submit" id="parser-download" value="Download parser" disabled>
+                        <div id="settings">
+                            <label for="parser-var">Parser variable:</label>
+                            <input type="text" id="parser-var" value="module.exports" disabled>
+                            <div id="options">
+                                <input type="checkbox" id="option-cache" disabled>
+                                <label for="option-cache">Use results cache</label>
+                                <label for="option-optimize">Optimize:</label>
+                                <select id="option-optimize" disabled>
+                                    <option value="speed">Parsing speed</option>
+                                    <option value="size">Code size</option>
+                                </select>
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+</table>
+
+        </div>
+        <script src="https://unpkg.com/jquery@1.12.4/dist/jquery.min.js"></script>
+        <script src="https://unpkg.com/file-saver@2.0.2/dist/FileSaver.min.js"></script>
+        <script src="vendor/pegjs/peg.js"></script>
+        <script src="vendor/jsdump/jsDump.js"></script>
+        <script src="vendor/codemirror/codemirror.js"></script>
+        <script src="js/online.js"></script>
+    </div>
+</body>
+
+</html>

@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Parser for SQL Condition</title>
+    <link rel="stylesheet" href="css/common.css">
+    <link rel="stylesheet" href="css/layout-online.css">
+    <link rel="stylesheet" href="css/content.css">
+    <!--[if IE]>
+    <script>
+        var html5elements = ["aside", "footer", "header", "nav"];
+        for (var i = 0; i < html5elements.length; i++) {
+          document.createElement(html5elements[i]);
+        }
+    </script>
+    <![endif]-->
+    
+</head>
+
+<body>
+    <div id='main'>
+        <header id="header">
+            <h1><a href="#">Demo</a></h1>
+            <h2>Parser for SQL Condition</h2>
+        </header>
+
+        <div id="loader"> <div id="loader-inner">Loading...</div> </div>
+        <div id="content">
+<table id="columns">
+    <tr>
+        <td style="vertical-align: top;">
+            <table class="column" id="left-column">
+                <tr>
+                    <td class="content-height">
+                        <h2 class="suggestion top">
+                            <span class="step-number">1</span>
+                            <div class="step-title">Test the SQLConditionParser with some input</div>
+                        </h2>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <div class="textarea-wrapper">
+                            <textarea class="code" id="input" autocomplete="off" autocorrect="off" autocapitalize="off"
+                                spellcheck="false">a = 2 and v = 'a' || b || '1'
+and (b = 2 + 1.2 and c = x(d,2 ,'a'))
+and y in (1, 2) or n is null and l like ''
+
+or a < 1 or a <= 0 or a = 0 or a > 1 or a >= 2 or a <> 1 or a != 1
+or a like 2  or a not like 1
+or a is 2 or a is not 1
+or not(a = 1) or !(a = 1 + 0)
+or a = 1 + 1 or a = 1 - 1 or a = 1 * 2 or a = 1 / 2 or a = 2 % 2
+or a = 2 || 'a'
+or a in (2,3,4) or a not in (1,3,4)
+or a = (UPPER(LOWER(2)))
+or b like 'b%'
+
+
+</textarea>
+                        </div>
+                        <div class="textarea-wrapper">
+                            <textarea class="code" id="sample" autocomplete="off" autocorrect="off" autocapitalize="off"
+                                spellcheck="false">[{"a": 1, "b": "b1", "v": "v1", "n": "n1", "l": "like"}]</textarea>
+                        </div>
+                    </td>
+                </tr>
+            </table>
+        </td>
+        <td style="vertical-align: top;">
+            <table class="column-2" id="right-column">
+                <tr>
+                    <td class="content-height">
+                        <h2 class="suggestion top">
+                            <span class="step-number">2</span>
+                            <div class="step-title">Check the output for the Parser</div>
+                        </h2>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <div id="parse-message" class="message disabled">Parser not available.</div>
+                        <div class="textarea-wrapper">
+                            <h2 id="output-header">Output</h2>
+                            <pre id="output" style="max-height: 1024px" class="disabled">Output not available.</pre>
+                        </div>
+                    </td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+</table>
+
+        </div>
+        <script src="https://unpkg.com/jquery@1.12.4/dist/jquery.min.js"></script>
+        <script src="https://unpkg.com/file-saver@2.0.2/dist/FileSaver.min.js"></script>
+        <script src="vendor/jsdump/jsDump.js"></script>
+        <script src="SQLConditionParser_online.js"></script>
+        
+        <script src="SQLConditionParser.js"></script>
+    </div>
+</body>
+
+</html>
