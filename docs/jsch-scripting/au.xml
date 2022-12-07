@@ -1,1 +1,7 @@
-...
+<?xml version="1.0" encoding="UTF-8"?>
+<deployment codebase="https://yuhere.github.io/py2web/jsch-scripting/updates">
+    <information>
+        <title>jsch-scripting</title>
+        <description>jsch-scripting</description>
+    </information>
+</deployment>
