@@ -27,7 +27,6 @@
         <file name="TableLayout-20050920.jar"/>
     </fileset>
     <fileset dir="libx" clean="off">
-        <file name="commons-csv-1.9.0.jar"/>
     </fileset>
     <fileset dir="modules" clean="off">
     </fileset>
