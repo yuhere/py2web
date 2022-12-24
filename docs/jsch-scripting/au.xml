@@ -1,7 +1,34 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<deployment codebase="https://yuhere.github.io/py2web/jsch-scripting/updates">
+<deployment codebase="https://yuhere.github.io/py2web/jsch-scripting">
     <information>
         <title>jsch-scripting</title>
         <description>jsch-scripting</description>
     </information>
+    <fileset dir="examples" clean="on">
+        <file name="hello.js"/>
+        <file name="hellow.js"/>
+        <file name="issue18.js"/>
+        <file name="libx.js"/>
+    </fileset>
+    <fileset dir="examples/jsch" clean="on">
+        <file name="hello.js"/>
+        <file name="LoginWithPrivateKeyFile.js"/>
+    </fileset>
+    <fileset dir="examples/rhino_es6" clean="on">
+        <file name="hello_require.js"/>
+    </fileset>
+    <fileset dir="examples/errorhandling" clean="on">
+        <file name="requireError.js"/>
+    </fileset>
+    <fileset dir="lib" clean="on">
+        <file name="jsch-0.1.55.jar"/>
+        <file name="jsch-scripting-core-1.0.3.jar"/>
+        <file name="rhino-1.7.14.jar"/>
+        <file name="TableLayout-20050920.jar"/>
+    </fileset>
+    <fileset dir="libx" clean="off">
+        <file name="commons-csv-1.9.0.jar"/>
+    </fileset>
+    <fileset dir="modules" clean="off">
+    </fileset>
 </deployment>
