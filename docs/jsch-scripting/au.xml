@@ -14,6 +14,10 @@
         <file name="hello.js"/>
         <file name="LoginWithPrivateKeyFile.js"/>
     </fileset>
+    <fileset dir="examples/wincmdk" clean="on">
+        <file name="hello.js"/>
+        <file name="wincmdk.js"/>
+    </fileset>
     <fileset dir="examples/rhino_es6" clean="on">
         <file name="hello_require.js"/>
     </fileset>
