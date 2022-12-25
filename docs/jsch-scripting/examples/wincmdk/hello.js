@@ -6,10 +6,10 @@ log(module.uri, arguments);
 function hello_main() {
     // create a "cmd /k" process
     const cmdk = make_cmd({
-        "PS1": "C:\\Driver_D\\g_workspace\\JSch-Scripting>",
+        "PS1": "C:\\JSch-Scripting>",
         "logfile": "win_cmdk.log",
         "charset": "GB18030",    // code page = 936
-        "cwd": "C:\\Driver_D\\g_workspace22",
+        "cwd": "C:\\workspace",
         "env": {
             "XPATH": "xpath"
         },
