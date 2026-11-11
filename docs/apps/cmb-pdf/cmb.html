@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>招商银行交易流水 PDF 解析</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 30px auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+
+        .card {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+
+        input[type="file"] {
+            margin-bottom: 10px;
+        }
+
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        pre {
+            background: #f8f9fa;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        table {
+            width: 100%;
+        }
+
+        td,
+        th {
+            border: 1px solid #ddd;
+        }
+
+        .loading {
+            color: #ff9800;
+            font-weight: bold;
+        }
+    </style>
+
+    <!-- 1. 使用传统 script 引入 pdf.js 核心库 -->
+    <!-- script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script -->
+    <!-- script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script -->
+    <script src="pdf.min.js"></script>
+    <script src="xlsx.full.min.js"></script>
+</head>
+
+<body>
+
+    <div class="card">
+        <h2>选择本地【招商银行交易流水PDF】文件</h2>
+        <input type="file" id="pdfFile" accept=".pdf"><br>
+        <button id="localBtn">解析本地 PDF</button>
+    </div>
+
+    <div class="card">
+        <h2>解析结果与内容分析：</h2>
+        <div id="status" class="loading"></div>
+        <div id="output_tbl">等待加载...</div>
+    </div>
+
+    <script>
+        const statusDiv = document.getElementById('status');
+        const outputTbl = document.getElementById('output_tbl');
+
+        function nvl(val) {
+            if (val == null) return "";
+            return val.toFixed(2);
+        }
+        function getToday() {
+            const now = new Date();
+            return `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}`;
+        }
+
+        function renderTable(all_records) {
+            const classified_records = all_records.reduce((ret, rec, idx) => {
+                if (!ret[rec.currency]) {
+                    ret[rec.currency] = [];
+                }
+                const pp = ret[rec.currency];
+                pp.push(rec);
+                return ret;
+            }, {});
+
+            const html = [];
+            for (let cur in classified_records) {
+                const records = classified_records[cur];
+                html.push("<h2>" + cur + "</h2>");
+                let income_total = 0.0;
+                let outcome_total = 0.0;
+                html.push("<table>");
+                html.push("<tr>");
+                html.push("<th>编号</th>");
+                html.push("<th>交易编号</th>");
+                html.push("<th>交易年月</th>");
+                html.push("<th>交易日期</th>");
+                html.push("<th>交易时间</th>");
+                html.push("<th>收入</th>");
+                html.push("<th>支出</th>");
+                html.push("<th>余额</th>");
+                html.push("<th>交易类型</th>");
+                html.push("<th>对手信息</th>");
+                // html.push("<th>对手名</th>");
+                // html.push("<th>对手账号</th>");
+                html.push("<th>客户摘要</th>");
+                html.push("</tr>")
+                let last_date = null, tnumber = 0;;
+                for (let i = 0; i < records.length; i++) {
+                    const record = records[i];
+                    if (last_date != record.date) {
+                        tnumber = 0;
+                        last_date = record.date;
+                    }
+                    html.push("<tr>");
+                    html.push("<td>" + cur + getToday() + ("" + (i + 1)).padStart(4, "0") + "</td>");
+                    html.push("<td>" + "T" + record.date + ("" + (++tnumber)).padStart(4, '0') + "</td>");
+                    html.push("<td>" + record.date.substring(0, 6) + "</td>");
+                    html.push("<td>" + record.date + "</td>");
+                    html.push("<td>" + "9" + ("" + tnumber).padStart(5, '0') + "</td>");
+                    html.push("<td>" + nvl(record.income) + "</td>");
+                    html.push("<td>" + nvl(record.outcome) + "</td>");
+                    html.push("<td>" + record.balance + "</td>");
+                    html.push("<td>" + record.transactionType + "</td>");
+                    html.push("<td>" + record.counterParty + "</td>");
+                    // const [a, b] = (() => {
+                    //     const m = /^(.*?)-(\d+)$/.exec(record.counterParty);
+                    //     if (m) {
+                    //         return [m[1], m[2]];
+                    //     }
+                    //     return [record.counterParty, ""]
+                    // })();
+                    // html.push("<td>" + a + "</td>");
+                    // html.push("<td>" + b + "</td>");
+                    html.push("<td>" + record.customerType + "</td>");
+                    html.push("</tr>")
+                    //
+                    income_total = income_total + (record.income ? record.income : 0.0);
+                    outcome_total = outcome_total + (record.outcome ? record.outcome : 0.0);
+                }
+                html.push("</table>");
+                html.push("<pre>");
+                html.push("校验：");
+                html.push("合并收入(+):" + income_total.toFixed(2));
+                html.push("合并支出(-):" + outcome_total.toFixed(2));
+                html.push("</pre>");
+            }
+            output_tbl.innerHTML = html.join("\n");
+        }
+
+        function renderExcel(all_records) {
+            const classified_records = all_records.reduce((ret, rec, idx) => {
+                if (!ret[rec.currency]) {
+                    ret[rec.currency] = [];
+                }
+                const pp = ret[rec.currency];
+                pp.push(rec);
+                return ret;
+            }, {});
+
+
+            const workbook = XLSX.utils.book_new();
+
+            for (let cur in classified_records) {
+                const records = classified_records[cur];
+
+                const data = [
+                    ["编号", "交易编号", "交易年月", "交易日期", "交易时间", "收入", "支出", "余额", "交易类型", "对手信息", "客户摘要"]
+                ];
+
+                let income_total = 0.0;
+                let outcome_total = 0.0;
+                let last_date = null, tnumber = 0;;
+                for (let i = 0; i < records.length; i++) {
+                    const record = records[i];
+                    if (last_date != record.date) {
+                        tnumber = 0;
+                        last_date = record.date;
+                    }
+                    const row = [];
+                    row.push(cur + getToday() + ("" + (i + 1)).padStart(4, "0"));
+                    row.push("T" + record.date + ("" + (++tnumber)).padStart(4, '0'));
+                    row.push(record.date.substring(0, 6));
+                    row.push(record.date);
+
+                    row.push("9" + ("" + tnumber).padStart(5, '0'));
+                    row.push(record.income);
+                    row.push(record.outcome);
+                    row.push(record.balance);
+                    row.push(record.transactionType);
+                    row.push(record.counterParty);
+                    row.push(record.customerType);
+                    //
+                    data.push(row);
+                    //
+                    income_total = income_total + (record.income ? record.income : 0.0);
+                    outcome_total = outcome_total + (record.outcome ? record.outcome : 0.0);
+                }
+                //
+                data.push([], [], []);
+
+                data.push(["校验："]);
+                data.push(["合并收入(+):" + income_total.toFixed(2)]);
+                data.push(["合并支出(-):" + outcome_total.toFixed(2)]);
+                const worksheet = XLSX.utils.aoa_to_sheet(data);
+                XLSX.utils.book_append_sheet(
+                    workbook,
+                    worksheet,
+                    "SHT-" + cur
+                );
+            }
+
+            XLSX.writeFile(workbook, "test.xlsx");
+        }
+
+
+        async function parsePdf(source) {
+            try {
+                statusDiv.textContent = "正在加载和解析 PDF，请稍候...";
+
+                const loadingTask = pdfjsLib.getDocument(source);
+                const pdfDocument = await loadingTask.promise;
+
+                statusDiv.textContent = `PDF 加载成功！总页数: ${pdfDocument.numPages}。正在提取文本...`;
+
+                const records = [];
+                for (let i = 1; i <= pdfDocument.numPages; i++) {
+                    const page = await pdfDocument.getPage(i);
+                    const textContent = await page.getTextContent();
+                    const pageText = textContent.items.map(item => item.str).join(" ");
+                    records.push(...parsePageText(i, pageText));
+                }
+                statusDiv.textContent = `解析完成！共提取 ${pdfDocument.numPages} 页内容。 ${records.length} 条记录。`;
+                // #####################
+                renderTable(records);
+                //
+                renderExcel(records);
+
+            } catch (error) {
+                statusDiv.textContent = "解析出错！" + error.message;
+                console.error(error);
+            }
+        }
+
+        // 按钮：解析本地文件
+        document.getElementById('localBtn').addEventListener('click', () => {
+            const fileInput = document.getElementById('pdfFile');
+            const file = fileInput.files[0];
+            if (!file) {
+                alert("请先选择一个本地的 PDF 文件！");
+                return;
+            }
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                const typedarray = new Uint8Array(e.target.result);
+                parsePdf({ data: typedarray });
+            };
+            reader.readAsArrayBuffer(file);
+        });
+
+        function parsePageText(pageNumber, pageText) {
+            var isFirstPage = pageText.indexOf("招商银行交易流水") !== -1 && pageText.indexOf("Transaction Statement of China Merchants Bank") !== -1;
+            var isLastPage = pageText.indexOf("温馨提示： 1.交易流水验真：进入一网通首页") !== -1;
+
+            function splitRecords(text) {
+                const pos_x = text.indexOf("合并统计");
+                const pos_y = text.indexOf("合并收入(+)");
+                const pos_z = text.indexOf("合并支出(-)");
+                if (pos_x !== -1 && pos_y !== -1 && pos_z !== -1) {
+                    const footer_text = text.substring(pos_x);
+                    text = text.substring(0, pos_x);
+                }
+                // 匹配类似 2025-09-27 的日期，并在其前面切分
+                const segments = text.split(/(?=\d{4}-\d{2}-\d{2})/);
+                // 过滤掉不包含日期开头的无效段落（如表头信息）
+                return segments.filter(seg => /\d{4}-\d{2}-\d{2}/.test(seg));
+            }
+
+            function parseRecord(segment) {
+                const parseCounterParty = (str) => {
+                    let m1 = /^(.*?)(\d{2,})$/.exec(str);
+                    if (m1) {
+                        return m1[1].replace(/ +/g, "") + "-" + m1[2];
+                    } else {
+                        console.error("eeeee", str);
+                        throw "eeeee";
+                    }
+                };
+
+                // #############
+                const fields = segment.split(/   /);
+                for (let i = 0; i < fields.length; i++) {
+                    fields[i] = fields[i].trim();
+                }
+
+                if (!/^\d{4}-\d{2}-\d{2}$/.test(fields[0])) {
+                    return null;
+                }
+                //
+                if (fields.length < 5) {
+                    console.error("fffff", segment, fields);
+                    throw "fffff";
+                } else {
+                    if (fields.length === 5) {
+                        let m = /^([\u4e00-\u9fa5]+)\s+((?:.*?)\d{2,})\s+(.*)$/.exec(fields[4]);
+                        if (m) {
+                            fields.splice(4, 1, m[1].replace(/ +/g, ""), m[2], m[3])
+                        } else {
+                            fields[4] = fields[4] ? fields[4].replace(/ +/g, "") : fields[4];
+                            if (["柜台取现", "柜台存现"].indexOf(fields[4]) !== -1) {
+                                while (fields.length < 7) {
+                                    fields.push("");
+                                }
+                            } else {
+                                console.error("aaaaa", segment, fields);
+                                throw "aaaaa";
+                            }
+                        }
+                    } else if (fields.length === 6) {
+                        fields[4] = fields[4] ? fields[4].replace(/ +/g, "") : fields[4];
+                        let m = /^((?:.*?)\d{2,})\s+(.*)$/.exec(fields[5]);
+                        if (m) {
+                            fields.splice(5, 1, m[1], m[2])
+                        } else {
+                            if (["结售汇即时售汇"].indexOf(fields[4]) !== -1) {
+                                while (fields.length < 7) {
+                                    fields.push("");
+                                }
+                            } else {
+                                console.error("bbbbb", segment, fields);
+                                throw "bbbbb";
+                            }
+                        }
+                    } else {
+                        fields[4] = fields[4] ? fields[4].replace(/ +/g, "") : fields[4];
+                    }
+
+                }
+
+                if (fields.length !== 7) {
+                    console.error("====", segment, fields);
+                    throw "ccccc";
+                }
+                // #############
+                fields[5] = fields[5] ? parseCounterParty(fields[5]) : fields[5];
+                fields[6] = fields[6] ? fields[6].replace(/ +/g, "") : fields[6];
+
+                // ###############################
+                // var mm = ["date", "currency", "transactionAmount", "balance", "transactionType", "counterParty",
+                //     "customerType"].reduce((ret, name, idx) => {
+                //         ret[name] = fields[idx];
+                //         return ret;
+                //     }, {});
+                // ###############################
+                const amount = parseFloat(fields[2].replace(/,/, ""));
+                const record = {
+                    date: fields[0].replace(/-/g, ""),
+                    currency: fields[1],
+                    amount: amount,
+                    income: amount >= 0 ? Math.abs(amount) : null,
+                    outcome: amount < 0 ? Math.abs(amount) : null,
+                    balance: parseFloat(fields[3].replace(/,/g, "")),
+                    transactionType: fields[4],
+                    counterParty: fields[5],
+                    customerType: fields[6],
+                    // #######
+                    pageNumber: pageNumber,
+                    original: segment
+                };
+                return record;
+            }
+
+            // 执行解析过程
+            const rawSegments = splitRecords(pageText);
+            const parsedRecords = rawSegments.map(parseRecord).filter(item => item !== null);
+            // console.log("解析结果：", parsedRecords);
+            // ###############################
+            return parsedRecords;
+        }
+
+    </script>
+
+</body>
+
+</html>
